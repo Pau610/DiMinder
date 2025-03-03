@@ -85,16 +85,42 @@ with col1:
     st.subheader("血糖趋势")
     if not st.session_state.glucose_data.empty:
         try:
+            # Date range selector
+            st.write("选择日期范围：")
+            col_start, col_end = st.columns(2)
+            with col_start:
+                start_date = st.date_input(
+                    "开始日期",
+                    datetime.now() - timedelta(days=7)
+                )
+            with col_end:
+                end_date = st.date_input(
+                    "结束日期",
+                    datetime.now()
+                )
+
+            # Convert dates to datetime
+            start_datetime = datetime.combine(start_date, datetime.min.time())
+            end_datetime = datetime.combine(end_date, datetime.max.time())
+
             # Sort data by timestamp
             data_sorted = st.session_state.glucose_data.sort_values('timestamp')
-            fig = create_glucose_plot(data_sorted)
+
+            # Filter data by date range
+            data_filtered = data_sorted[
+                (data_sorted['timestamp'] >= start_datetime) &
+                (data_sorted['timestamp'] <= end_datetime)
+            ]
+
+            # Create interactive plot with date range
+            fig = create_glucose_plot(data_filtered, (start_datetime, end_datetime))
             st.plotly_chart(fig, use_container_width=True)
 
             # Predictions
             st.subheader("血糖预测")
-            if len(data_sorted) >= 3:
-                predictions = st.session_state.predictor.predict(data_sorted)
-                fig_pred = create_prediction_plot(data_sorted, predictions)
+            if len(data_filtered) >= 3:
+                predictions = st.session_state.predictor.predict(data_filtered)
+                fig_pred = create_prediction_plot(data_filtered, predictions)
                 st.plotly_chart(fig_pred, use_container_width=True)
             else:
                 st.info("需要至少3个血糖记录来进行预测")
