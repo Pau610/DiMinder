@@ -286,6 +286,14 @@ else:
             with col2:
                 st.metric("平均值 (最近5次)", f"{recent_data['glucose_level'].mean():.1f} mg/dL")
 
+            # 血糖预警检查
+            recent_glucose = recent_data['glucose_level'].iloc[-1]
+            if recent_glucose <= 40:
+                st.error("⚠️ 危险！当前血糖值过低，请立即处理！")
+            elif recent_glucose < 70:
+                st.warning("⚠️ 注意！当前血糖值偏低，请及时补充糖分。")
+
+
             # Predictions
             st.subheader("血糖预测")
             if len(data_filtered) >= 3:
@@ -336,11 +344,16 @@ else:
                     )
                     st.plotly_chart(fig_real_time, use_container_width=True)
 
-                    # Show warning if predicted values are out of range
+                    # Check if any predicted values are dangerous
+                    if np.any(real_time_predictions <= 40):
+                        st.error("⚠️ 危险！预测未来30分钟内可能出现严重低血糖，请立即采取预防措施！")
+                    elif np.any(real_time_predictions < 70):
+                        st.warning("⚠️ 注意！预测未来30分钟内可能出现低血糖，请做好准备。")
+
                     if np.any(real_time_predictions > 180) or np.any(real_time_predictions < 70):
                         st.warning("⚠️ 预测显示血糖可能会超出目标范围，请注意监测")
-            else:
-                st.info("需要至少1小时的数据来进行实时预测")
+                else:
+                    st.info("需要至少1小时的数据来进行实时预测")
 
             # Insulin needs prediction
             st.subheader("胰岛素需求预测")
@@ -469,7 +482,12 @@ else:
                         )
                         st.plotly_chart(fig_real_time, use_container_width=True)
 
-                        # Show warning if predicted values are out of range
+                        # Check if any predicted values are dangerous
+                        if np.any(real_time_predictions <= 40):
+                            st.error("⚠️ 危险！预测未来30分钟内可能出现严重低血糖，请立即采取预防措施！")
+                        elif np.any(real_time_predictions < 70):
+                            st.warning("⚠️ 注意！预测未来30分钟内可能出现低血糖，请做好准备。")
+
                         if np.any(real_time_predictions > 180) or np.any(real_time_predictions < 70):
                             st.warning("⚠️ 预测显示血糖可能会超出目标范围，请注意监测")
                 else:
@@ -523,6 +541,13 @@ else:
                 recent_data = data_sorted.tail(5)
                 st.metric("最新血糖", f"{recent_data['glucose_level'].iloc[-1]:.1f} mg/dL")
                 st.metric("平均值 (最近5次)", f"{recent_data['glucose_level'].mean():.1f} mg/dL")
+
+                # 血糖预警检查
+                recent_glucose = recent_data['glucose_level'].iloc[-1]
+                if recent_glucose <= 40:
+                    st.error("⚠️ 危险！当前血糖值过低，请立即处理！")
+                elif recent_glucose < 70:
+                    st.warning("⚠️ 注意！当前血糖值偏低，请及时补充糖分。")
 
                 # Insulin recommendation
                 if recent_data['carbs'].sum() > 0:

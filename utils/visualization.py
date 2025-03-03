@@ -19,9 +19,19 @@ def create_glucose_plot(data, date_range=None):
         marker=dict(size=10)  # 增大标记点以便触控
     ))
 
+    # Add danger zone for hypoglycemia (below 40 mg/dL)
+    fig.add_hrect(
+        y0=0, y1=40,
+        fillcolor="red", opacity=0.1,
+        layer="below", line_width=0,
+        name="低血糖危险区域"
+    )
+
     # Add target range
-    fig.add_hline(y=70, line_dash="dash", line_color="red", opacity=0.5)
-    fig.add_hline(y=180, line_dash="dash", line_color="red", opacity=0.5)
+    fig.add_hline(y=40, line_dash="dash", line_color="red", opacity=0.8,
+                  annotation=dict(text="低血糖警戒线", showarrow=False, xref="paper", x=1))
+    fig.add_hline(y=70, line_dash="dash", line_color="orange", opacity=0.5)
+    fig.add_hline(y=180, line_dash="dash", line_color="orange", opacity=0.5)
 
     # Update layout with mobile-friendly features
     fig.update_layout(
@@ -31,24 +41,22 @@ def create_glucose_plot(data, date_range=None):
         hovermode='x unified',
         showlegend=True,
         legend=dict(
-            orientation="h",  # 水平放置图例
+            orientation="h",
             yanchor="bottom",
             y=1.02,
             xanchor="right",
             x=1
         ),
-        # 移动端优化的边距
         margin=dict(l=10, r=10, t=60, b=10),
-        # Add range slider
         xaxis=dict(
-            rangeslider=dict(visible=True, thickness=0.1),  # 减小滑块高度
+            rangeslider=dict(visible=True, thickness=0.1),
             type='date',
-            tickfont=dict(size=10)  # 减小刻度字体
+            tickfont=dict(size=10)
         ),
         yaxis=dict(
-            tickfont=dict(size=10)  # 减小刻度字体
+            tickfont=dict(size=10),
+            range=[0, max(200, data['glucose_level'].max() * 1.1)]  # 确保危险区域可见
         ),
-        # Add zoom and pan buttons with larger touch targets
         updatemenus=[
             dict(
                 type="buttons",
@@ -79,7 +87,6 @@ def create_glucose_plot(data, date_range=None):
                         args=[{'xaxis.range': [data['timestamp'].min(), data['timestamp'].max()]}]
                     )
                 ],
-                # 增大按钮尺寸
                 pad={"r": 10, "t": 10},
                 font=dict(size=12)
             )
@@ -95,6 +102,14 @@ def create_prediction_plot(data, predictions):
 
     fig = go.Figure()
 
+    # Add danger zone for hypoglycemia
+    fig.add_hrect(
+        y0=0, y1=40,
+        fillcolor="red", opacity=0.1,
+        layer="below", line_width=0,
+        name="低血糖危险区域"
+    )
+
     # Historical data
     fig.add_trace(go.Scatter(
         x=data['timestamp'],
@@ -102,7 +117,7 @@ def create_prediction_plot(data, predictions):
         name='历史数据',
         line=dict(color='blue', width=2),
         mode='lines+markers',
-        marker=dict(size=10)  # 增大标记点以便触控
+        marker=dict(size=10)
     ))
 
     # Predictions
@@ -114,6 +129,12 @@ def create_prediction_plot(data, predictions):
         mode='lines'
     ))
 
+    # Add warning lines
+    fig.add_hline(y=40, line_dash="dash", line_color="red", opacity=0.8,
+                  annotation=dict(text="低血糖警戒线", showarrow=False, xref="paper", x=1))
+    fig.add_hline(y=70, line_dash="dash", line_color="orange", opacity=0.5)
+    fig.add_hline(y=180, line_dash="dash", line_color="orange", opacity=0.5)
+
     # Update layout with mobile-friendly features
     fig.update_layout(
         title='血糖预测（未来6小时）',
@@ -122,22 +143,21 @@ def create_prediction_plot(data, predictions):
         hovermode='x unified',
         showlegend=True,
         legend=dict(
-            orientation="h",  # 水平放置图例
+            orientation="h",
             yanchor="bottom",
             y=1.02,
             xanchor="right",
             x=1
         ),
-        # 移动端优化的边距
         margin=dict(l=10, r=10, t=60, b=10),
-        # Add range slider
         xaxis=dict(
-            rangeslider=dict(visible=True, thickness=0.1),  # 减小滑块高度
+            rangeslider=dict(visible=True, thickness=0.1),
             type='date',
-            tickfont=dict(size=10)  # 减小刻度字体
+            tickfont=dict(size=10)
         ),
         yaxis=dict(
-            tickfont=dict(size=10)  # 减小刻度字体
+            tickfont=dict(size=10),
+            range=[0, max(200, max(data['glucose_level'].max(), max(predictions)) * 1.1)]
         )
     )
 
