@@ -35,12 +35,20 @@ with st.sidebar:
 
     # Blood glucose input
     with st.expander("记录血糖", expanded=True):
+        # 添加日期选择器
+        record_date = st.date_input(
+            "记录日期",
+            datetime.now(),
+            max_value=datetime.now()
+        )
+        record_time = st.time_input("记录时间", datetime.now().time())
         glucose_level = st.number_input("血糖水平 (mg/dL)", 40.0, 400.0, 120.0)
-        record_time = st.time_input("记录时间", datetime.now())
 
         if st.button("添加血糖记录"):
+            # 组合日期和时间
+            record_datetime = datetime.combine(record_date, record_time)
             new_data = {
-                'timestamp': datetime.combine(datetime.today(), record_time),
+                'timestamp': record_datetime,
                 'glucose_level': glucose_level,
                 'carbs': 0,
                 'insulin': 0
@@ -54,6 +62,15 @@ with st.sidebar:
     # Meal input
     with st.expander("记录饮食", expanded=True):
         try:
+            # 添加日期选择器
+            meal_date = st.date_input(
+                "用餐日期",
+                datetime.now(),
+                max_value=datetime.now(),
+                key="meal_date"
+            )
+            meal_time = st.time_input("用餐时间", datetime.now().time(), key="meal_time")
+
             food_db = pd.read_csv('data/food_database.csv')
             selected_food = st.selectbox("选择食物", food_db['food_name'].tolist())
             portion_size = st.number_input("份量 (克)", 0, 1000, 100)
@@ -64,8 +81,10 @@ with st.sidebar:
             st.write(f"总碳水化合物: {carbs:.1f}g")
 
             if st.button("添加饮食记录"):
+                # 组合日期和时间
+                meal_datetime = datetime.combine(meal_date, meal_time)
                 new_meal = {
-                    'timestamp': datetime.now(),
+                    'timestamp': meal_datetime,
                     'glucose_level': 0,
                     'carbs': carbs,
                     'insulin': 0
