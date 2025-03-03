@@ -61,8 +61,10 @@ if 'glucose_data' not in st.session_state:
         'insulin': [0, 3, 0, 2, 0],
         'insulin_type': ['', '', '', '', ''], #Added for insulin type
         'injection_site': ['', '', '', '', ''] #Added for injection site
-
     })
+
+if 'selected_time' not in st.session_state:
+    st.session_state.selected_time = datetime.now().time()
 
 try:
     if 'predictor' not in st.session_state:
@@ -87,23 +89,30 @@ with st.sidebar:
             record_date = st.date_input(
                 "记录日期",
                 datetime.now(),
-                max_value=datetime.now()
+                max_value=datetime.now(),
+                key="glucose_date"
             )
         with col2:
-            record_time = st.time_input("记录时间", datetime.now().time())
+            # 使用唯一的key并保存时间选择
+            record_time = st.time_input(
+                "记录时间",
+                st.session_state.selected_time,
+                key="glucose_time"
+            )
+            if record_time != st.session_state.selected_time:
+                st.session_state.selected_time = record_time
 
-        glucose_level = st.number_input("血糖水平 (mg/dL)", 40.0, 400.0, 120.0)
+        glucose_level = st.number_input("血糖水平 (mg/dL)", 40.0, 400.0, 120.0, key="glucose_level")
 
         if st.button("添加血糖记录", use_container_width=True):
-            # 组合日期和时间
             record_datetime = datetime.combine(record_date, record_time)
             new_data = {
                 'timestamp': record_datetime,
                 'glucose_level': glucose_level,
                 'carbs': 0,
                 'insulin': 0,
-                'insulin_type': '', #Added for insulin type
-                'injection_site': '' #Added for injection site
+                'insulin_type': '',
+                'injection_site': ''
             }
             st.session_state.glucose_data = pd.concat([
                 st.session_state.glucose_data,
@@ -124,11 +133,20 @@ with st.sidebar:
                     key="meal_date"
                 )
             with col2:
-                meal_time = st.time_input("用餐时间", datetime.now().time(), key="meal_time")
+                # 使用唯一的key并保存时间选择
+                if 'meal_time' not in st.session_state:
+                    st.session_state.meal_time = datetime.now().time()
+                meal_time = st.time_input(
+                    "用餐时间",
+                    st.session_state.meal_time,
+                    key="meal_time_input"
+                )
+                if meal_time != st.session_state.meal_time:
+                    st.session_state.meal_time = meal_time
 
             food_db = pd.read_csv('data/food_database.csv')
-            selected_food = st.selectbox("选择食物", food_db['food_name'].tolist())
-            portion_size = st.number_input("份量 (克)", 0, 1000, 100)
+            selected_food = st.selectbox("选择食物", food_db['food_name'].tolist(), key="food_select")
+            portion_size = st.number_input("份量 (克)", 0, 1000, 100, key="portion_size")
 
             food_info = food_db[food_db['food_name'] == selected_food].iloc[0]
             carbs = (food_info['carbs_per_100g'] * portion_size) / 100
@@ -136,15 +154,14 @@ with st.sidebar:
             st.write(f"总碳水化合物: {carbs:.1f}g")
 
             if st.button("添加饮食记录", use_container_width=True):
-                # 组合日期和时间
                 meal_datetime = datetime.combine(meal_date, meal_time)
                 new_meal = {
                     'timestamp': meal_datetime,
                     'glucose_level': 0,
                     'carbs': carbs,
                     'insulin': 0,
-                    'insulin_type': '', #Added for insulin type
-                    'injection_site': '' #Added for injection site
+                    'insulin_type': '',
+                    'injection_site': ''
                 }
                 st.session_state.glucose_data = pd.concat([
                     st.session_state.glucose_data,
@@ -167,25 +184,38 @@ with st.sidebar:
                     key="injection_date"
                 )
             with col2:
-                injection_time = st.time_input("注射时间", datetime.now().time(), key="injection_time")
+                # 使用唯一的key并保存时间选择
+                if 'injection_time' not in st.session_state:
+                    st.session_state.injection_time = datetime.now().time()
+                injection_time = st.time_input(
+                    "注射时间",
+                    st.session_state.injection_time,
+                    key="injection_time_input"
+                )
+                if injection_time != st.session_state.injection_time:
+                    st.session_state.injection_time = injection_time
 
             # 注射部位选择
             injection_site = st.selectbox(
                 "注射部位",
                 ["腹部", "大腿", "手臂", "臀部"],
-                key="injection_site"
+                key="injection_site_select"
             )
 
             # 胰岛素类型和剂量
             insulin_type = st.selectbox(
                 "胰岛素类型",
                 ["短效胰岛素", "中效胰岛素", "长效胰岛素"],
-                key="insulin_type"
+                key="insulin_type_select"
             )
-            insulin_dose = st.number_input("胰岛素剂量 (单位)", 0.0, 100.0, 0.0, step=0.5)
+            insulin_dose = st.number_input(
+                "胰岛素剂量 (单位)",
+                0.0, 100.0, 0.0,
+                step=0.5,
+                key="insulin_dose"
+            )
 
             if st.button("添加注射记录", use_container_width=True):
-                # 组合日期和时间
                 injection_datetime = datetime.combine(injection_date, injection_time)
                 new_injection = {
                     'timestamp': injection_datetime,
