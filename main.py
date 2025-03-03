@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from models.glucose_predictor import GlucosePredictor
 from utils.data_processor import DataProcessor
 from utils.visualization import create_glucose_plot, create_prediction_plot
+import plotly.graph_objects as go
 
 # Page config
 st.set_page_config(
@@ -57,7 +58,10 @@ if 'glucose_data' not in st.session_state:
         'timestamp': [datetime.now() - timedelta(hours=i) for i in range(5)],
         'glucose_level': [120, 140, 110, 130, 125],
         'carbs': [0, 45, 0, 30, 0],
-        'insulin': [0, 3, 0, 2, 0]
+        'insulin': [0, 3, 0, 2, 0],
+        'insulin_type': ['', '', '', '', ''], #Added for insulin type
+        'injection_site': ['', '', '', '', ''] #Added for injection site
+
     })
 
 try:
@@ -97,7 +101,9 @@ with st.sidebar:
                 'timestamp': record_datetime,
                 'glucose_level': glucose_level,
                 'carbs': 0,
-                'insulin': 0
+                'insulin': 0,
+                'insulin_type': '', #Added for insulin type
+                'injection_site': '' #Added for injection site
             }
             st.session_state.glucose_data = pd.concat([
                 st.session_state.glucose_data,
@@ -136,7 +142,9 @@ with st.sidebar:
                     'timestamp': meal_datetime,
                     'glucose_level': 0,
                     'carbs': carbs,
-                    'insulin': 0
+                    'insulin': 0,
+                    'insulin_type': '', #Added for insulin type
+                    'injection_site': '' #Added for injection site
                 }
                 st.session_state.glucose_data = pd.concat([
                     st.session_state.glucose_data,
@@ -145,6 +153,56 @@ with st.sidebar:
                 st.success("饮食记录已添加！")
         except Exception as e:
             st.error(f"加载食物数据库时发生错误: {str(e)}")
+
+    # Insulin injection input
+    with st.expander("记录胰岛素注射", expanded=True):
+        try:
+            # 添加日期选择器
+            col1, col2 = st.columns(2)
+            with col1:
+                injection_date = st.date_input(
+                    "注射日期",
+                    datetime.now(),
+                    max_value=datetime.now(),
+                    key="injection_date"
+                )
+            with col2:
+                injection_time = st.time_input("注射时间", datetime.now().time(), key="injection_time")
+
+            # 注射部位选择
+            injection_site = st.selectbox(
+                "注射部位",
+                ["腹部", "大腿", "手臂", "臀部"],
+                key="injection_site"
+            )
+
+            # 胰岛素类型和剂量
+            insulin_type = st.selectbox(
+                "胰岛素类型",
+                ["短效胰岛素", "中效胰岛素", "长效胰岛素"],
+                key="insulin_type"
+            )
+            insulin_dose = st.number_input("胰岛素剂量 (单位)", 0.0, 100.0, 0.0, step=0.5)
+
+            if st.button("添加注射记录", use_container_width=True):
+                # 组合日期和时间
+                injection_datetime = datetime.combine(injection_date, injection_time)
+                new_injection = {
+                    'timestamp': injection_datetime,
+                    'glucose_level': 0,
+                    'carbs': 0,
+                    'insulin': insulin_dose,
+                    'insulin_type': insulin_type,
+                    'injection_site': injection_site
+                }
+                st.session_state.glucose_data = pd.concat([
+                    st.session_state.glucose_data,
+                    pd.DataFrame([new_injection])
+                ], ignore_index=True)
+                st.success("注射记录已添加！")
+
+        except Exception as e:
+            st.error(f"添加注射记录时发生错误: {str(e)}")
 
 # Main content with responsive layout
 if st.session_state.glucose_data.empty:
@@ -207,6 +265,92 @@ else:
             else:
                 st.info("需要至少3个血糖记录来进行预测")
 
+
+            # Real-time predictions
+            st.subheader("实时血糖预测")
+            if len(data_filtered) >= 12:
+                real_time_predictions = st.session_state.predictor.predict_real_time(data_filtered)
+                if len(real_time_predictions) > 0:
+                    pred_times = [datetime.now() + timedelta(minutes=5*i) for i in range(6)]
+                    real_time_df = pd.DataFrame({
+                        'timestamp': pred_times,
+                        'glucose_level': real_time_predictions
+                    })
+                    lower_bound, upper_bound = st.session_state.predictor.get_prediction_intervals(real_time_predictions)
+
+                    fig_real_time = go.Figure()
+
+                    # Add prediction intervals
+                    fig_real_time.add_trace(go.Scatter(
+                        x=pred_times + pred_times[::-1],
+                        y=np.concatenate([upper_bound, lower_bound[::-1]]),
+                        fill='toself',
+                        fillcolor='rgba(0,176,246,0.2)',
+                        line=dict(color='rgba(255,255,255,0)'),
+                        name='预测区间'
+                    ))
+
+                    # Add predictions
+                    fig_real_time.add_trace(go.Scatter(
+                        x=pred_times,
+                        y=real_time_predictions,
+                        name='预测值',
+                        line=dict(color='red', width=2)
+                    ))
+
+                    fig_real_time.update_layout(
+                        title='未来30分钟血糖预测',
+                        xaxis_title='时间',
+                        yaxis_title='血糖值 (mg/dL)',
+                        height=300
+                    )
+                    st.plotly_chart(fig_real_time, use_container_width=True)
+
+                    # Show warning if predicted values are out of range
+                    if np.any(real_time_predictions > 180) or np.any(real_time_predictions < 70):
+                        st.warning("⚠️ 预测显示血糖可能会超出目标范围，请注意监测")
+            else:
+                st.info("需要至少1小时的数据来进行实时预测")
+
+            # Insulin needs prediction
+            st.subheader("胰岛素需求预测")
+            if len(data_filtered) >= 24:
+                insulin_predictions = st.session_state.processor.predict_insulin_needs(data_filtered)
+                if len(insulin_predictions) > 0:
+                    pred_hours = [datetime.now() + timedelta(hours=i) for i in range(24)]
+                    insulin_df = pd.DataFrame({
+                        'timestamp': pred_hours,
+                        'insulin': insulin_predictions
+                    })
+
+                    fig_insulin = go.Figure()
+                    fig_insulin.add_trace(go.Scatter(
+                        x=pred_hours,
+                        y=insulin_predictions,
+                        name='预计胰岛素需求',
+                        line=dict(color='purple', width=2)
+                    ))
+
+                    fig_insulin.update_layout(
+                        title='24小时胰岛素需求预测',
+                        xaxis_title='时间',
+                        yaxis_title='胰岛素剂量 (单位)',
+                        height=300
+                    )
+                    st.plotly_chart(fig_insulin, use_container_width=True)
+            else:
+                st.info("需要至少24小时的数据来预测胰岛素需求")
+
+            # Injection site analysis
+            st.subheader("注射部位分析")
+            site_stats = st.session_state.processor.analyze_injection_sites(data_filtered)
+            if site_stats:
+                site_df = pd.DataFrame(site_stats)
+                st.write("注射部位使用统计：")
+                st.dataframe(site_df)
+            else:
+                st.info("暂无注射部位数据")
+
         except Exception as e:
             st.error(f"生成图表时发生错误: {str(e)}")
 
@@ -254,6 +398,92 @@ else:
                     st.plotly_chart(fig_pred, use_container_width=True, height=450)
                 else:
                     st.info("需要至少3个血糖记录来进行预测")
+
+                # Real-time predictions
+                st.subheader("实时血糖预测")
+                if len(data_filtered) >= 12:
+                    real_time_predictions = st.session_state.predictor.predict_real_time(data_filtered)
+                    if len(real_time_predictions) > 0:
+                        pred_times = [datetime.now() + timedelta(minutes=5*i) for i in range(6)]
+                        real_time_df = pd.DataFrame({
+                            'timestamp': pred_times,
+                            'glucose_level': real_time_predictions
+                        })
+                        lower_bound, upper_bound = st.session_state.predictor.get_prediction_intervals(real_time_predictions)
+
+                        fig_real_time = go.Figure()
+
+                        # Add prediction intervals
+                        fig_real_time.add_trace(go.Scatter(
+                            x=pred_times + pred_times[::-1],
+                            y=np.concatenate([upper_bound, lower_bound[::-1]]),
+                            fill='toself',
+                            fillcolor='rgba(0,176,246,0.2)',
+                            line=dict(color='rgba(255,255,255,0)'),
+                            name='预测区间'
+                        ))
+
+                        # Add predictions
+                        fig_real_time.add_trace(go.Scatter(
+                            x=pred_times,
+                            y=real_time_predictions,
+                            name='预测值',
+                            line=dict(color='red', width=2)
+                        ))
+
+                        fig_real_time.update_layout(
+                            title='未来30分钟血糖预测',
+                            xaxis_title='时间',
+                            yaxis_title='血糖值 (mg/dL)',
+                            height=300
+                        )
+                        st.plotly_chart(fig_real_time, use_container_width=True)
+
+                        # Show warning if predicted values are out of range
+                        if np.any(real_time_predictions > 180) or np.any(real_time_predictions < 70):
+                            st.warning("⚠️ 预测显示血糖可能会超出目标范围，请注意监测")
+                else:
+                    st.info("需要至少1小时的数据来进行实时预测")
+
+                # Insulin needs prediction
+                st.subheader("胰岛素需求预测")
+                if len(data_filtered) >= 24:
+                    insulin_predictions = st.session_state.processor.predict_insulin_needs(data_filtered)
+                    if len(insulin_predictions) > 0:
+                        pred_hours = [datetime.now() + timedelta(hours=i) for i in range(24)]
+                        insulin_df = pd.DataFrame({
+                            'timestamp': pred_hours,
+                            'insulin': insulin_predictions
+                        })
+
+                        fig_insulin = go.Figure()
+                        fig_insulin.add_trace(go.Scatter(
+                            x=pred_hours,
+                            y=insulin_predictions,
+                            name='预计胰岛素需求',
+                            line=dict(color='purple', width=2)
+                        ))
+
+                        fig_insulin.update_layout(
+                            title='24小时胰岛素需求预测',
+                            xaxis_title='时间',
+                            yaxis_title='胰岛素剂量 (单位)',
+                            height=300
+                        )
+                        st.plotly_chart(fig_insulin, use_container_width=True)
+                else:
+                    st.info("需要至少24小时的数据来预测胰岛素需求")
+
+                # Injection site analysis
+                st.subheader("注射部位分析")
+                site_stats = st.session_state.processor.analyze_injection_sites(data_filtered)
+                if site_stats:
+                    site_df = pd.DataFrame(site_stats)
+                    st.write("注射部位使用统计：")
+                    st.dataframe(site_df)
+                else:
+                    st.info("暂无注射部位数据")
+
             except Exception as e:
                 st.error(f"生成图表时发生错误: {str(e)}")
 
