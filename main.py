@@ -52,14 +52,17 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Initialize session state
-if 'glucose_data' not in st.session_state:
+# Initialize session state - force reload of data
+if 'glucose_data' not in st.session_state or st.button("重新加载数据", key="reload_data"):
     try:
         # Load the imported diabetes records
         imported_data = pd.read_csv('processed_dm_data.csv')
         imported_data['timestamp'] = pd.to_datetime(imported_data['timestamp'])
         st.session_state.glucose_data = imported_data
-    except:
+        if 'reload_data' in st.session_state:
+            st.success("数据已重新加载")
+    except Exception as e:
+        st.error(f"数据加载失败: {e}")
         # Fallback to empty data if import fails
         st.session_state.glucose_data = pd.DataFrame({
             'timestamp': [],
