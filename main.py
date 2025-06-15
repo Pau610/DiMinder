@@ -639,60 +639,177 @@ else:
             except Exception as e:
                 st.error(f"计算统计数据时发生错误: {str(e)}")
 
-    # Food intake summary table
-    st.subheader("饮食记录汇总")
-    try:
-        # Filter data to show only meal records (carbs > 0)
-        meal_data = st.session_state.glucose_data[st.session_state.glucose_data['carbs'] > 0].copy()
-        if not meal_data.empty:
-            # Sort by timestamp descending
-            meal_data = meal_data.sort_values('timestamp', ascending=False)
-            
-            # Create display dataframe with formatted data
-            display_meals = meal_data[['timestamp', 'food_details', 'carbs']].copy()
-            display_meals['日期'] = display_meals['timestamp'].dt.strftime('%Y-%m-%d')
-            display_meals['时间'] = display_meals['timestamp'].dt.strftime('%H:%M')
-            display_meals['食物详情'] = display_meals['food_details'].fillna('').apply(lambda x: x if x else '未记录详情')
-            display_meals['碳水化合物 (g)'] = display_meals['carbs'].round(1)
-            
-            # Show summary table with food details
-            summary_display = display_meals[['日期', '时间', '食物详情', '碳水化合物 (g)']].head(20)
-            st.dataframe(
-                summary_display,
-                use_container_width=True,
-                height=400 if is_mobile else 500,
-                column_config={
-                    "食物详情": st.column_config.TextColumn("食物详情", width="large")
-                }
-            )
-            
-            # Add daily summary statistics
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                today_carbs = meal_data[meal_data['timestamp'].dt.date == datetime.now().date()]['carbs'].sum()
-                st.metric("今日碳水总量", f"{today_carbs:.1f}g")
-            
-            with col2:
-                avg_daily_carbs = meal_data.groupby(meal_data['timestamp'].dt.date)['carbs'].sum().mean()
-                st.metric("日均碳水", f"{avg_daily_carbs:.1f}g")
-            
-            with col3:
-                meal_count_today = len(meal_data[meal_data['timestamp'].dt.date == datetime.now().date()])
-                st.metric("今日餐次", f"{meal_count_today}次")
+    # Review Tables Section
+    st.header("数据回顾分析")
+    
+    # Tab selection for different review tables
+    tab1, tab2, tab3, tab4 = st.tabs(["血糖记录", "胰岛素注射记录", "饮食记录", "综合记录"])
+    
+    with tab1:
+        st.subheader("血糖记录汇总")
+        try:
+            # Filter data to show only glucose records (glucose_level > 0)
+            glucose_data = st.session_state.glucose_data[st.session_state.glucose_data['glucose_level'] > 0].copy()
+            if not glucose_data.empty:
+                glucose_data = glucose_data.sort_values('timestamp', ascending=False)
                 
-        else:
-            st.info("暂无饮食记录")
-    except Exception as e:
-        st.error(f"显示饮食汇总时发生错误: {str(e)}")
-
-    # Data table with mobile-friendly scroll
-    st.subheader("所有记录")
-    try:
-        display_data = st.session_state.glucose_data.sort_values('timestamp', ascending=False).head(10)
-        st.dataframe(
-            display_data,
-            use_container_width=True,
-            height=300 if is_mobile else 400
-        )
-    except Exception as e:
-        st.error(f"显示数据表格时发生错误: {str(e)}")
+                # Create display dataframe
+                display_glucose = glucose_data[['timestamp', 'glucose_level']].copy()
+                display_glucose['日期'] = display_glucose['timestamp'].dt.strftime('%Y-%m-%d')
+                display_glucose['时间'] = display_glucose['timestamp'].dt.strftime('%H:%M')
+                display_glucose['血糖值 (mg/dL)'] = display_glucose['glucose_level'].round(1)
+                display_glucose['血糖状态'] = display_glucose['glucose_level'].apply(
+                    lambda x: '严重低血糖' if x <= 40 else ('低血糖' if x < 70 else ('正常' if x <= 180 else '高血糖'))
+                )
+                
+                summary_glucose = display_glucose[['日期', '时间', '血糖值 (mg/dL)', '血糖状态']].head(30)
+                st.dataframe(summary_glucose, use_container_width=True, height=400)
+                
+                # Glucose statistics
+                col1, col2, col3, col4 = st.columns(4)
+                with col1:
+                    avg_glucose = glucose_data['glucose_level'].mean()
+                    st.metric("平均血糖", f"{avg_glucose:.1f} mg/dL")
+                with col2:
+                    low_count = len(glucose_data[glucose_data['glucose_level'] < 70])
+                    st.metric("低血糖次数", f"{low_count}次")
+                with col3:
+                    high_count = len(glucose_data[glucose_data['glucose_level'] > 180])
+                    st.metric("高血糖次数", f"{high_count}次")
+                with col4:
+                    danger_count = len(glucose_data[glucose_data['glucose_level'] <= 40])
+                    st.metric("严重低血糖", f"{danger_count}次", delta_color="inverse")
+            else:
+                st.info("暂无血糖记录")
+        except Exception as e:
+            st.error(f"显示血糖汇总时发生错误: {str(e)}")
+    
+    with tab2:
+        st.subheader("胰岛素注射记录汇总")
+        try:
+            # Filter data to show only insulin records (insulin > 0)
+            insulin_data = st.session_state.glucose_data[st.session_state.glucose_data['insulin'] > 0].copy()
+            if not insulin_data.empty:
+                insulin_data = insulin_data.sort_values('timestamp', ascending=False)
+                
+                # Create display dataframe
+                display_insulin = insulin_data[['timestamp', 'insulin', 'insulin_type', 'injection_site']].copy()
+                display_insulin['日期'] = display_insulin['timestamp'].dt.strftime('%Y-%m-%d')
+                display_insulin['时间'] = display_insulin['timestamp'].dt.strftime('%H:%M')
+                display_insulin['剂量 (单位)'] = display_insulin['insulin'].round(1)
+                display_insulin['胰岛素类型'] = display_insulin['insulin_type'].fillna('未指定')
+                display_insulin['注射部位'] = display_insulin['injection_site'].fillna('未指定')
+                
+                summary_insulin = display_insulin[['日期', '时间', '剂量 (单位)', '胰岛素类型', '注射部位']].head(30)
+                st.dataframe(summary_insulin, use_container_width=True, height=400)
+                
+                # Insulin statistics
+                col1, col2, col3, col4 = st.columns(4)
+                with col1:
+                    total_insulin = insulin_data['insulin'].sum()
+                    st.metric("总胰岛素用量", f"{total_insulin:.1f}单位")
+                with col2:
+                    daily_avg = insulin_data.groupby(insulin_data['timestamp'].dt.date)['insulin'].sum().mean()
+                    st.metric("日均用量", f"{daily_avg:.1f}单位")
+                with col3:
+                    long_acting = insulin_data[insulin_data['insulin_type'] == '长效胰岛素']['insulin'].sum()
+                    st.metric("长效胰岛素", f"{long_acting:.1f}单位")
+                with col4:
+                    short_acting = insulin_data[insulin_data['insulin_type'] == '短效胰岛素']['insulin'].sum()
+                    st.metric("短效胰岛素", f"{short_acting:.1f}单位")
+            else:
+                st.info("暂无胰岛素注射记录")
+        except Exception as e:
+            st.error(f"显示胰岛素汇总时发生错误: {str(e)}")
+    
+    with tab3:
+        st.subheader("饮食记录汇总")
+        try:
+            # Filter data to show only meal records (carbs > 0)
+            meal_data = st.session_state.glucose_data[st.session_state.glucose_data['carbs'] > 0].copy()
+            if not meal_data.empty:
+                meal_data = meal_data.sort_values('timestamp', ascending=False)
+                
+                # Create display dataframe with formatted data
+                display_meals = meal_data[['timestamp', 'food_details', 'carbs']].copy()
+                display_meals['日期'] = display_meals['timestamp'].dt.strftime('%Y-%m-%d')
+                display_meals['时间'] = display_meals['timestamp'].dt.strftime('%H:%M')
+                display_meals['食物详情'] = display_meals['food_details'].fillna('').apply(lambda x: x if x else '未记录详情')
+                display_meals['碳水化合物 (g)'] = display_meals['carbs'].round(1)
+                
+                # Show summary table with food details
+                summary_display = display_meals[['日期', '时间', '食物详情', '碳水化合物 (g)']].head(30)
+                st.dataframe(
+                    summary_display,
+                    use_container_width=True,
+                    height=400,
+                    column_config={
+                        "食物详情": st.column_config.TextColumn("食物详情", width="large")
+                    }
+                )
+                
+                # Add daily summary statistics
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    total_carbs = meal_data['carbs'].sum()
+                    st.metric("总碳水摄入", f"{total_carbs:.1f}g")
+                
+                with col2:
+                    avg_daily_carbs = meal_data.groupby(meal_data['timestamp'].dt.date)['carbs'].sum().mean()
+                    st.metric("日均碳水", f"{avg_daily_carbs:.1f}g")
+                
+                with col3:
+                    total_meals = len(meal_data)
+                    st.metric("总餐次", f"{total_meals}次")
+                    
+            else:
+                st.info("暂无饮食记录")
+        except Exception as e:
+            st.error(f"显示饮食汇总时发生错误: {str(e)}")
+    
+    with tab4:
+        st.subheader("综合记录总览")
+        try:
+            all_data = st.session_state.glucose_data.sort_values('timestamp', ascending=False)
+            if not all_data.empty:
+                # Create comprehensive display
+                display_all = all_data.copy()
+                display_all['日期'] = display_all['timestamp'].dt.strftime('%Y-%m-%d')
+                display_all['时间'] = display_all['timestamp'].dt.strftime('%H:%M')
+                display_all['血糖 (mg/dL)'] = display_all['glucose_level'].apply(lambda x: f"{x:.1f}" if x > 0 else "-")
+                display_all['胰岛素 (单位)'] = display_all['insulin'].apply(lambda x: f"{x:.1f}" if x > 0 else "-")
+                display_all['碳水 (g)'] = display_all['carbs'].apply(lambda x: f"{x:.1f}" if x > 0 else "-")
+                display_all['记录类型'] = display_all.apply(lambda row: 
+                    '血糖' if row['glucose_level'] > 0 else 
+                    ('胰岛素' if row['insulin'] > 0 else 
+                     ('饮食' if row['carbs'] > 0 else '其他')), axis=1)
+                
+                summary_all = display_all[['日期', '时间', '记录类型', '血糖 (mg/dL)', '胰岛素 (单位)', '碳水 (g)']].head(50)
+                st.dataframe(summary_all, use_container_width=True, height=500)
+                
+                # Overall statistics
+                st.subheader("总体统计")
+                col1, col2, col3, col4 = st.columns(4)
+                
+                glucose_records = len(all_data[all_data['glucose_level'] > 0])
+                insulin_records = len(all_data[all_data['insulin'] > 0])
+                meal_records = len(all_data[all_data['carbs'] > 0])
+                total_records = len(all_data)
+                
+                with col1:
+                    st.metric("总记录数", f"{total_records}条")
+                with col2:
+                    st.metric("血糖记录", f"{glucose_records}条")
+                with col3:
+                    st.metric("胰岛素记录", f"{insulin_records}条")
+                with col4:
+                    st.metric("饮食记录", f"{meal_records}条")
+                    
+                # Date range
+                date_range = f"{all_data['timestamp'].min().strftime('%Y-%m-%d')} 至 {all_data['timestamp'].max().strftime('%Y-%m-%d')}"
+                st.info(f"数据时间范围: {date_range}")
+                
+            else:
+                st.info("暂无任何记录")
+        except Exception as e:
+            st.error(f"显示综合记录时发生错误: {str(e)}")
