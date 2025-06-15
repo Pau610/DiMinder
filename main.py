@@ -242,6 +242,18 @@ with st.sidebar:
         except Exception as e:
             st.error(f"添加注射记录时发生错误: {str(e)}")
 
+# 血糖预警系统 (显著位置)
+if not st.session_state.glucose_data.empty:
+    latest_glucose = st.session_state.glucose_data['glucose_level'].iloc[-1]
+    if latest_glucose <= 40:
+        st.error("🚨 严重低血糖预警！当前血糖: {:.1f} mg/dL - 请立即处理！".format(latest_glucose))
+        st.markdown("**紧急处理建议：**")
+        st.markdown("- 立即摄入15-20克快速碳水化合物")
+        st.markdown("- 15分钟后重新测量血糖")
+        st.markdown("- 如无改善请寻求医疗帮助")
+    elif latest_glucose < 70:
+        st.warning("⚠️ 低血糖预警！当前血糖: {:.1f} mg/dL - 请及时处理".format(latest_glucose))
+
 # Main content with responsive layout
 if st.session_state.glucose_data.empty:
     st.info("还没有任何记录，请先添加数据。")
