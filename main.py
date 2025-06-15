@@ -60,7 +60,8 @@ if 'glucose_data' not in st.session_state:
         'carbs': [0, 45, 0, 30, 0],
         'insulin': [0, 3, 0, 2, 0],
         'insulin_type': ['', '', '', '', ''], #Added for insulin type
-        'injection_site': ['', '', '', '', ''] #Added for injection site
+        'injection_site': ['', '', '', '', ''], #Added for injection site
+        'food_details': ['', '面条 (45g碳水)', '', '米饭 (30g碳水)', ''] #Added for food details
     })
 
 if 'selected_time' not in st.session_state:
@@ -116,7 +117,8 @@ with st.sidebar:
                 'carbs': 0,
                 'insulin': 0,
                 'insulin_type': '',
-                'injection_site': ''
+                'injection_site': '',
+                'food_details': ''
             }
             st.session_state.glucose_data = pd.concat([
                 st.session_state.glucose_data,
@@ -192,13 +194,18 @@ with st.sidebar:
 
                 if st.button("添加饮食记录", use_container_width=True):
                     meal_datetime = datetime.combine(meal_date, meal_time)
+                    # Create detailed food description
+                    food_list = [f"{item['food']} ({item['carbs']}g碳水)" for item in st.session_state.meal_foods]
+                    food_details = "; ".join(food_list)
+                    
                     new_meal = {
                         'timestamp': meal_datetime,
                         'glucose_level': 0,
                         'carbs': total_carbs,
                         'insulin': 0,
                         'insulin_type': '',
-                        'injection_site': ''
+                        'injection_site': '',
+                        'food_details': food_details
                     }
                     st.session_state.glucose_data = pd.concat([
                         st.session_state.glucose_data,
@@ -268,7 +275,8 @@ with st.sidebar:
                     'carbs': 0,
                     'insulin': insulin_dose,
                     'insulin_type': insulin_type,
-                    'injection_site': injection_site
+                    'injection_site': injection_site,
+                    'food_details': ''
                 }
                 st.session_state.glucose_data = pd.concat([
                     st.session_state.glucose_data,
@@ -626,17 +634,21 @@ else:
             meal_data = meal_data.sort_values('timestamp', ascending=False)
             
             # Create display dataframe with formatted data
-            display_meals = meal_data[['timestamp', 'carbs']].copy()
+            display_meals = meal_data[['timestamp', 'food_details', 'carbs']].copy()
             display_meals['日期'] = display_meals['timestamp'].dt.strftime('%Y-%m-%d')
             display_meals['时间'] = display_meals['timestamp'].dt.strftime('%H:%M')
+            display_meals['食物详情'] = display_meals['food_details'].fillna('').apply(lambda x: x if x else '未记录详情')
             display_meals['碳水化合物 (g)'] = display_meals['carbs'].round(1)
             
-            # Show summary table
-            summary_display = display_meals[['日期', '时间', '碳水化合物 (g)']].head(20)
+            # Show summary table with food details
+            summary_display = display_meals[['日期', '时间', '食物详情', '碳水化合物 (g)']].head(20)
             st.dataframe(
                 summary_display,
                 use_container_width=True,
-                height=300 if is_mobile else 400
+                height=400 if is_mobile else 500,
+                column_config={
+                    "食物详情": st.column_config.TextColumn("食物详情", width="large")
+                }
             )
             
             # Add daily summary statistics
