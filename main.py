@@ -125,13 +125,15 @@ with st.sidebar:
             # 更新状态但不重置
             st.session_state.glucose_time_state = record_time
 
-        glucose_level = st.number_input("血糖水平 (mg/dL)", 40.0, 400.0, 120.0, key="glucose_level")
+        glucose_mmol = st.number_input("血糖水平 (mmol/L)", 2.0, 22.0, 6.7, step=0.1, key="glucose_level")
 
         if st.button("添加血糖记录", use_container_width=True):
             record_datetime = datetime.combine(record_date, record_time)
+            # Convert mmol/L to mg/dL for internal storage
+            glucose_level_mgdl = glucose_mmol * 18.0182
             new_data = {
                 'timestamp': record_datetime,
-                'glucose_level': glucose_level,
+                'glucose_level': glucose_level_mgdl,
                 'carbs': 0,
                 'insulin': 0,
                 'insulin_type': '',
