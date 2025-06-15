@@ -93,14 +93,18 @@ with st.sidebar:
                 key="glucose_date"
             )
         with col2:
-            # 使用唯一的key并保存时间选择
+            # 初始化血糖记录时间状态
+            if 'glucose_time_state' not in st.session_state:
+                st.session_state.glucose_time_state = datetime.now().time()
+            
             record_time = st.time_input(
                 "记录时间",
-                st.session_state.selected_time,
+                value=st.session_state.glucose_time_state,
                 key="glucose_time"
             )
-            if record_time != st.session_state.selected_time:
-                st.session_state.selected_time = record_time
+            
+            # 更新状态但不重置
+            st.session_state.glucose_time_state = record_time
 
         glucose_level = st.number_input("血糖水平 (mg/dL)", 40.0, 400.0, 120.0, key="glucose_level")
 
@@ -133,16 +137,18 @@ with st.sidebar:
                     key="meal_date"
                 )
             with col2:
-                # 使用唯一的key并保存时间选择
-                if 'meal_time' not in st.session_state:
-                    st.session_state.meal_time = datetime.now().time()
+                # 初始化用餐时间状态
+                if 'meal_time_state' not in st.session_state:
+                    st.session_state.meal_time_state = datetime.now().time()
+                
                 meal_time = st.time_input(
                     "用餐时间",
-                    st.session_state.meal_time,
+                    value=st.session_state.meal_time_state,
                     key="meal_time_input"
                 )
-                if meal_time != st.session_state.meal_time:
-                    st.session_state.meal_time = meal_time
+                
+                # 更新状态但不重置
+                st.session_state.meal_time_state = meal_time
 
             food_db = pd.read_csv('data/food_database.csv')
             selected_food = st.selectbox("选择食物", food_db['food_name'].tolist(), key="food_select")
@@ -184,16 +190,18 @@ with st.sidebar:
                     key="injection_date"
                 )
             with col2:
-                # 使用唯一的key并保存时间选择
-                if 'injection_time' not in st.session_state:
-                    st.session_state.injection_time = datetime.now().time()
+                # 初始化注射时间状态
+                if 'injection_time_state' not in st.session_state:
+                    st.session_state.injection_time_state = datetime.now().time()
+                
                 injection_time = st.time_input(
                     "注射时间",
-                    st.session_state.injection_time,
+                    value=st.session_state.injection_time_state,
                     key="injection_time_input"
                 )
-                if injection_time != st.session_state.injection_time:
-                    st.session_state.injection_time = injection_time
+                
+                # 更新状态但不重置
+                st.session_state.injection_time_state = injection_time
 
             # 注射部位选择
             injection_site = st.selectbox(
