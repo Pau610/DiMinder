@@ -661,11 +661,12 @@ else:
                 display_glucose['日期'] = display_glucose['timestamp'].dt.strftime('%Y-%m-%d')
                 display_glucose['时间'] = display_glucose['timestamp'].dt.strftime('%H:%M')
                 display_glucose['血糖值 (mg/dL)'] = display_glucose['glucose_level'].round(1)
+                display_glucose['血糖值 (mmol/L)'] = (display_glucose['glucose_level'] / 18.0182).round(1)
                 display_glucose['血糖状态'] = display_glucose['glucose_level'].apply(
                     lambda x: '严重低血糖' if x <= 40 else ('低血糖' if x < 70 else ('正常' if x <= 180 else '高血糖'))
                 )
                 
-                summary_glucose = display_glucose[['日期', '时间', '血糖值 (mg/dL)', '血糖状态']].head(30)
+                summary_glucose = display_glucose[['日期', '时间', '血糖值 (mg/dL)', '血糖值 (mmol/L)', '血糖状态']].head(30)
                 st.dataframe(summary_glucose, use_container_width=True, height=400)
                 
                 # Glucose statistics
