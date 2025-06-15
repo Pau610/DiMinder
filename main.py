@@ -616,8 +616,50 @@ else:
             except Exception as e:
                 st.error(f"计算统计数据时发生错误: {str(e)}")
 
+    # Food intake summary table
+    st.subheader("饮食记录汇总")
+    try:
+        # Filter data to show only meal records (carbs > 0)
+        meal_data = st.session_state.glucose_data[st.session_state.glucose_data['carbs'] > 0].copy()
+        if not meal_data.empty:
+            # Sort by timestamp descending
+            meal_data = meal_data.sort_values('timestamp', ascending=False)
+            
+            # Create display dataframe with formatted data
+            display_meals = meal_data[['timestamp', 'carbs']].copy()
+            display_meals['日期'] = display_meals['timestamp'].dt.strftime('%Y-%m-%d')
+            display_meals['时间'] = display_meals['timestamp'].dt.strftime('%H:%M')
+            display_meals['碳水化合物 (g)'] = display_meals['carbs'].round(1)
+            
+            # Show summary table
+            summary_display = display_meals[['日期', '时间', '碳水化合物 (g)']].head(20)
+            st.dataframe(
+                summary_display,
+                use_container_width=True,
+                height=300 if is_mobile else 400
+            )
+            
+            # Add daily summary statistics
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                today_carbs = meal_data[meal_data['timestamp'].dt.date == datetime.now().date()]['carbs'].sum()
+                st.metric("今日碳水总量", f"{today_carbs:.1f}g")
+            
+            with col2:
+                avg_daily_carbs = meal_data.groupby(meal_data['timestamp'].dt.date)['carbs'].sum().mean()
+                st.metric("日均碳水", f"{avg_daily_carbs:.1f}g")
+            
+            with col3:
+                meal_count_today = len(meal_data[meal_data['timestamp'].dt.date == datetime.now().date()])
+                st.metric("今日餐次", f"{meal_count_today}次")
+                
+        else:
+            st.info("暂无饮食记录")
+    except Exception as e:
+        st.error(f"显示饮食汇总时发生错误: {str(e)}")
+
     # Data table with mobile-friendly scroll
-    st.subheader("最近记录")
+    st.subheader("所有记录")
     try:
         display_data = st.session_state.glucose_data.sort_values('timestamp', ascending=False).head(10)
         st.dataframe(
