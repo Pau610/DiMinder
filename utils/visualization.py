@@ -29,7 +29,7 @@ def create_glucose_plot(data, date_range=None):
 
     # Add target range
     fig.add_hline(y=40, line_dash="dash", line_color="red", opacity=0.8,
-                  annotation=dict(text="低血糖警戒线", showarrow=False, xref="paper", x=1))
+                  annotation_text="低血糖警戒线", annotation_position="top right")
     fig.add_hline(y=70, line_dash="dash", line_color="orange", opacity=0.5)
     fig.add_hline(y=180, line_dash="dash", line_color="orange", opacity=0.5)
 
@@ -131,7 +131,7 @@ def create_prediction_plot(data, predictions):
 
     # Add warning lines
     fig.add_hline(y=40, line_dash="dash", line_color="red", opacity=0.8,
-                  annotation=dict(text="低血糖警戒线", showarrow=False, xref="paper", x=1))
+                  annotation_text="低血糖警戒线", annotation_position="top right")
     fig.add_hline(y=70, line_dash="dash", line_color="orange", opacity=0.5)
     fig.add_hline(y=180, line_dash="dash", line_color="orange", opacity=0.5)
 
