@@ -150,32 +150,69 @@ with st.sidebar:
                 # 更新状态但不重置
                 st.session_state.meal_time_state = meal_time
 
-            food_db = pd.read_csv('data/food_database.csv')
-            selected_food = st.selectbox("选择食物", food_db['food_name'].tolist(), key="food_select")
-            portion_size = st.number_input("份量 (克)", 0, 1000, 100, key="portion_size")
+            # 初始化食物列表
+            if 'meal_foods' not in st.session_state:
+                st.session_state.meal_foods = []
 
-            food_info = food_db[food_db['food_name'] == selected_food].iloc[0]
-            carbs = (food_info['carbs_per_100g'] * portion_size) / 100
+            # 添加食物输入
+            st.write("添加食物:")
+            col_food, col_carbs, col_add = st.columns([3, 2, 1])
+            
+            with col_food:
+                food_name = st.text_input("食物名称", key="food_name_input", placeholder="例如：米饭、面条、苹果...")
+            
+            with col_carbs:
+                carbs_amount = st.number_input("碳水化合物 (克)", 0.0, 500.0, 0.0, step=0.1, key="carbs_input")
+            
+            with col_add:
+                st.write("")  # 空行对齐
+                if st.button("➕", key="add_food_btn", help="添加食物"):
+                    if food_name and carbs_amount > 0:
+                        st.session_state.meal_foods.append({
+                            'food': food_name,
+                            'carbs': carbs_amount
+                        })
+                        st.rerun()
 
-            st.write(f"总碳水化合物: {carbs:.1f}g")
+            # 显示已添加的食物
+            if st.session_state.meal_foods:
+                st.write("本餐食物:")
+                total_carbs = 0
+                for i, food_item in enumerate(st.session_state.meal_foods):
+                    col_display, col_remove = st.columns([4, 1])
+                    with col_display:
+                        st.write(f"• {food_item['food']}: {food_item['carbs']}g 碳水化合物")
+                        total_carbs += food_item['carbs']
+                    with col_remove:
+                        if st.button("🗑️", key=f"remove_food_{i}", help="删除"):
+                            st.session_state.meal_foods.pop(i)
+                            st.rerun()
+                
+                st.write(f"**总碳水化合物: {total_carbs:.1f}g**")
 
-            if st.button("添加饮食记录", use_container_width=True):
-                meal_datetime = datetime.combine(meal_date, meal_time)
-                new_meal = {
-                    'timestamp': meal_datetime,
-                    'glucose_level': 0,
-                    'carbs': carbs,
-                    'insulin': 0,
-                    'insulin_type': '',
-                    'injection_site': ''
-                }
-                st.session_state.glucose_data = pd.concat([
-                    st.session_state.glucose_data,
-                    pd.DataFrame([new_meal])
-                ], ignore_index=True)
-                st.success("饮食记录已添加！")
+                if st.button("添加饮食记录", use_container_width=True):
+                    meal_datetime = datetime.combine(meal_date, meal_time)
+                    new_meal = {
+                        'timestamp': meal_datetime,
+                        'glucose_level': 0,
+                        'carbs': total_carbs,
+                        'insulin': 0,
+                        'insulin_type': '',
+                        'injection_site': ''
+                    }
+                    st.session_state.glucose_data = pd.concat([
+                        st.session_state.glucose_data,
+                        pd.DataFrame([new_meal])
+                    ], ignore_index=True)
+                    # 清空食物列表
+                    st.session_state.meal_foods = []
+                    st.success("饮食记录已添加！")
+                    st.rerun()
+            else:
+                st.info("请添加食物和碳水化合物含量")
+
         except Exception as e:
-            st.error(f"加载食物数据库时发生错误: {str(e)}")
+            st.error(f"添加饮食记录时发生错误: {str(e)}")
 
     # Insulin injection input
     with st.expander("记录胰岛素注射", expanded=True):
