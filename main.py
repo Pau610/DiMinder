@@ -2,10 +2,14 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
+import pytz
 from models.glucose_predictor import GlucosePredictor
 from utils.data_processor import DataProcessor
 from utils.visualization import create_glucose_plot, create_prediction_plot
 import plotly.graph_objects as go
+
+# Set Hong Kong timezone
+HK_TZ = pytz.timezone('Asia/Hong_Kong')
 
 # Page config
 st.set_page_config(
@@ -105,19 +109,21 @@ with st.sidebar:
         # 添加日期选择器
         col1, col2 = st.columns(2)
         with col1:
+            hk_today = datetime.now(HK_TZ).date()
             record_date = st.date_input(
-                "记录日期",
-                datetime.now(),
-                max_value=datetime.now(),
+                "记录日期 (GMT+8)",
+                hk_today,
+                max_value=hk_today,
                 key="glucose_date"
             )
         with col2:
-            # 初始化血糖记录时间状态
+            # 初始化血糖记录时间状态 (HK时区)
             if 'glucose_time_state' not in st.session_state:
-                st.session_state.glucose_time_state = datetime.now().time()
+                hk_now = datetime.now(HK_TZ)
+                st.session_state.glucose_time_state = hk_now.time()
             
             record_time = st.time_input(
-                "记录时间",
+                "记录时间 (GMT+8)",
                 value=st.session_state.glucose_time_state,
                 key="glucose_time"
             )
@@ -152,19 +158,21 @@ with st.sidebar:
             # 添加日期选择器
             col1, col2 = st.columns(2)
             with col1:
+                hk_today = datetime.now(HK_TZ).date()
                 meal_date = st.date_input(
-                    "用餐日期",
-                    datetime.now(),
-                    max_value=datetime.now(),
+                    "用餐日期 (GMT+8)",
+                    hk_today,
+                    max_value=hk_today,
                     key="meal_date"
                 )
             with col2:
-                # 初始化用餐时间状态
+                # 初始化用餐时间状态 (HK时区)
                 if 'meal_time_state' not in st.session_state:
-                    st.session_state.meal_time_state = datetime.now().time()
+                    hk_now = datetime.now(HK_TZ)
+                    st.session_state.meal_time_state = hk_now.time()
                 
                 meal_time = st.time_input(
-                    "用餐时间",
+                    "用餐时间 (GMT+8)",
                     value=st.session_state.meal_time_state,
                     key="meal_time_input"
                 )
@@ -247,19 +255,21 @@ with st.sidebar:
             # 添加日期选择器
             col1, col2 = st.columns(2)
             with col1:
+                hk_today = datetime.now(HK_TZ).date()
                 injection_date = st.date_input(
-                    "注射日期",
-                    datetime.now(),
-                    max_value=datetime.now(),
+                    "注射日期 (GMT+8)",
+                    hk_today,
+                    max_value=hk_today,
                     key="injection_date"
                 )
             with col2:
-                # 初始化注射时间状态
+                # 初始化注射时间状态 (HK时区)
                 if 'injection_time_state' not in st.session_state:
-                    st.session_state.injection_time_state = datetime.now().time()
+                    hk_now = datetime.now(HK_TZ)
+                    st.session_state.injection_time_state = hk_now.time()
                 
                 injection_time = st.time_input(
-                    "注射时间",
+                    "注射时间 (GMT+8)",
                     value=st.session_state.injection_time_state,
                     key="injection_time_input"
                 )
