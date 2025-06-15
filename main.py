@@ -54,15 +54,30 @@ st.markdown("""
 
 # Initialize session state
 if 'glucose_data' not in st.session_state:
-    st.session_state.glucose_data = pd.DataFrame({
-        'timestamp': [datetime.now() - timedelta(hours=i) for i in range(5)],
-        'glucose_level': [120, 140, 110, 130, 125],
-        'carbs': [0, 45, 0, 30, 0],
-        'insulin': [0, 3, 0, 2, 0],
-        'insulin_type': ['', '', '', '', ''], #Added for insulin type
-        'injection_site': ['', '', '', '', ''], #Added for injection site
-        'food_details': ['', '面条 (45g碳水)', '', '米饭 (30g碳水)', ''] #Added for food details
-    })
+    try:
+        # Load the imported diabetes records
+        imported_data = pd.read_csv('processed_dm_data.csv')
+        imported_data['timestamp'] = pd.to_datetime(imported_data['timestamp'])
+        st.session_state.glucose_data = imported_data
+    except:
+        # Fallback to empty data if import fails
+        st.session_state.glucose_data = pd.DataFrame({
+            'timestamp': [],
+            'glucose_level': [],
+            'carbs': [],
+            'insulin': [],
+            'insulin_type': [],
+            'injection_site': [],
+            'food_details': []
+        }).astype({
+            'timestamp': 'datetime64[ns]',
+            'glucose_level': 'float64',
+            'carbs': 'float64', 
+            'insulin': 'float64',
+            'insulin_type': 'object',
+            'injection_site': 'object',
+            'food_details': 'object'
+        })
 
 if 'selected_time' not in st.session_state:
     st.session_state.selected_time = datetime.now().time()
