@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import os
 from datetime import datetime, timedelta
 import pytz
 from models.glucose_predictor import GlucosePredictor
@@ -56,17 +57,24 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Initialize session state - only load data once or when explicitly requested
-if 'glucose_data' not in st.session_state:
+# Functions for persistent data storage
+def load_persistent_data():
+    """Load data with persistent manual records"""
     try:
-        # Load the imported diabetes records only on first load
-        imported_data = pd.read_csv('processed_dm_data.csv')
-        imported_data['timestamp'] = pd.to_datetime(imported_data['timestamp'])
-        st.session_state.glucose_data = imported_data
+        # Try to load persistent data first (includes manual records)
+        if os.path.exists('user_data.csv'):
+            data = pd.read_csv('user_data.csv')
+            data['timestamp'] = pd.to_datetime(data['timestamp'])
+            return data
+        else:
+            # If no persistent data exists, load imported data
+            imported_data = pd.read_csv('processed_dm_data.csv')
+            imported_data['timestamp'] = pd.to_datetime(imported_data['timestamp'])
+            return imported_data
     except Exception as e:
         st.error(f"数据加载失败: {e}")
-        # Fallback to empty data if import fails
-        st.session_state.glucose_data = pd.DataFrame({
+        # Fallback to empty data if everything fails
+        return pd.DataFrame({
             'timestamp': [],
             'glucose_level': [],
             'carbs': [],
@@ -84,13 +92,25 @@ if 'glucose_data' not in st.session_state:
             'food_details': 'object'
         })
 
-# Optional reload button (separate from initialization)
+def save_persistent_data():
+    """Save current data to persistent storage"""
+    try:
+        st.session_state.glucose_data.to_csv('user_data.csv', index=False)
+    except Exception as e:
+        st.error(f"数据保存失败: {e}")
+
+# Initialize session state with persistent data
+if 'glucose_data' not in st.session_state:
+    st.session_state.glucose_data = load_persistent_data()
+
+# Optional reload button (restores original imported data)
 if st.button("重新加载原始数据", key="reload_data"):
     try:
         imported_data = pd.read_csv('processed_dm_data.csv')
         imported_data['timestamp'] = pd.to_datetime(imported_data['timestamp'])
         st.session_state.glucose_data = imported_data
-        st.success("原始数据已重新加载（手动添加的记录已清除）")
+        save_persistent_data()  # Save as new persistent data
+        st.success("原始数据已重新加载")
     except Exception as e:
         st.error(f"数据重新加载失败: {e}")
 
@@ -158,6 +178,7 @@ with st.sidebar:
                 st.session_state.glucose_data,
                 pd.DataFrame([new_data])
             ], ignore_index=True)
+            save_persistent_data()  # Save to persistent storage
             st.success("记录已添加！")
 
     # Meal input
@@ -247,6 +268,7 @@ with st.sidebar:
                         st.session_state.glucose_data,
                         pd.DataFrame([new_meal])
                     ], ignore_index=True)
+                    save_persistent_data()  # Save to persistent storage
                     # 清空食物列表
                     st.session_state.meal_foods = []
                     st.success("饮食记录已添加！")
@@ -320,6 +342,7 @@ with st.sidebar:
                     st.session_state.glucose_data,
                     pd.DataFrame([new_injection])
                 ], ignore_index=True)
+                save_persistent_data()  # Save to persistent storage
                 st.success("注射记录已添加！")
 
         except Exception as e:
