@@ -124,12 +124,12 @@ def generate_daily_summary(selected_date):
         
         # Insulin injection record
         if row['insulin'] > 0:
-            insulin_dose = int(row['insulin']) if row['insulin'].is_integer() else row['insulin']
+            insulin_dose = int(row['insulin']) if float(row['insulin']).is_integer() else row['insulin']
             summary_lines.append(f" {time_str} => {insulin_dose}U {row['insulin_type']}")
         
         # Meal record
         if row['carbs'] > 0 and row['food_details']:
-            carbs_total = int(row['carbs']) if row['carbs'].is_integer() else row['carbs']
+            carbs_total = int(row['carbs']) if float(row['carbs']).is_integer() else row['carbs']
             summary_lines.append(f" {time_str} => {row['food_details']} [{carbs_total}g]")
     
     summary_lines.append(" )")
@@ -778,8 +778,44 @@ else:
                     lambda x: '严重低血糖' if x <= 40 else ('低血糖' if x < 70 else ('正常' if x <= 180 else '高血糖'))
                 )
                 
-                summary_glucose = display_glucose[['日期', '时间', '血糖值 (mmol/L)', '血糖状态']].head(30)
-                st.dataframe(summary_glucose, use_container_width=True, height=400)
+                # Display records with delete functionality
+                st.write("**最近30条血糖记录:**")
+                glucose_records = glucose_data.head(30)
+                
+                for idx, row in glucose_records.iterrows():
+                    col1, col2, col3, col4, col5 = st.columns([2, 1, 2, 2, 1])
+                    
+                    with col1:
+                        st.write(f"{row['timestamp'].strftime('%Y-%m-%d')}")
+                    with col2:
+                        st.write(f"{row['timestamp'].strftime('%H:%M')}")
+                    with col3:
+                        glucose_mmol = round(row['glucose_level'] / 18.0182, 1)
+                        st.write(f"{glucose_mmol} mmol/L")
+                    with col4:
+                        status = '严重低血糖' if row['glucose_level'] <= 40 else ('低血糖' if row['glucose_level'] < 70 else ('正常' if row['glucose_level'] <= 180 else '高血糖'))
+                        st.write(status)
+                    with col5:
+                        if st.button("🗑️", key=f"delete_glucose_{idx}", help="删除记录"):
+                            if f"confirm_delete_glucose_{idx}" not in st.session_state:
+                                st.session_state[f"confirm_delete_glucose_{idx}"] = True
+                                st.rerun()
+                            
+                    # Confirmation dialog
+                    if f"confirm_delete_glucose_{idx}" in st.session_state:
+                        st.warning(f"确认删除 {row['timestamp'].strftime('%Y-%m-%d %H:%M')} 的血糖记录？")
+                        col_yes, col_no = st.columns(2)
+                        with col_yes:
+                            if st.button("确认删除", key=f"confirm_yes_{idx}"):
+                                st.session_state.glucose_data = st.session_state.glucose_data.drop(idx).reset_index(drop=True)
+                                save_persistent_data()
+                                del st.session_state[f"confirm_delete_glucose_{idx}"]
+                                st.success("记录已删除")
+                                st.rerun()
+                        with col_no:
+                            if st.button("取消", key=f"confirm_no_{idx}"):
+                                del st.session_state[f"confirm_delete_glucose_{idx}"]
+                                st.rerun()
                 
                 # Glucose statistics
                 col1, col2, col3, col4 = st.columns(4)
@@ -816,8 +852,44 @@ else:
                 display_insulin['胰岛素类型'] = display_insulin['insulin_type'].fillna('未指定')
                 display_insulin['注射部位'] = display_insulin['injection_site'].fillna('未指定')
                 
-                summary_insulin = display_insulin[['日期', '时间', '剂量 (单位)', '胰岛素类型', '注射部位']].head(30)
-                st.dataframe(summary_insulin, use_container_width=True, height=400)
+                # Display records with delete functionality
+                st.write("**最近30条胰岛素注射记录:**")
+                insulin_records = insulin_data.head(30)
+                
+                for idx, row in insulin_records.iterrows():
+                    col1, col2, col3, col4, col5, col6 = st.columns([2, 1, 1.5, 1.5, 1.5, 1])
+                    
+                    with col1:
+                        st.write(f"{row['timestamp'].strftime('%Y-%m-%d')}")
+                    with col2:
+                        st.write(f"{row['timestamp'].strftime('%H:%M')}")
+                    with col3:
+                        st.write(f"{row['insulin']:.1f} 单位")
+                    with col4:
+                        st.write(f"{row['insulin_type'] if pd.notna(row['insulin_type']) else '未指定'}")
+                    with col5:
+                        st.write(f"{row['injection_site'] if pd.notna(row['injection_site']) else '未指定'}")
+                    with col6:
+                        if st.button("🗑️", key=f"delete_insulin_{idx}", help="删除记录"):
+                            if f"confirm_delete_insulin_{idx}" not in st.session_state:
+                                st.session_state[f"confirm_delete_insulin_{idx}"] = True
+                                st.rerun()
+                            
+                    # Confirmation dialog
+                    if f"confirm_delete_insulin_{idx}" in st.session_state:
+                        st.warning(f"确认删除 {row['timestamp'].strftime('%Y-%m-%d %H:%M')} 的胰岛素注射记录？")
+                        col_yes, col_no = st.columns(2)
+                        with col_yes:
+                            if st.button("确认删除", key=f"confirm_insulin_yes_{idx}"):
+                                st.session_state.glucose_data = st.session_state.glucose_data.drop(idx).reset_index(drop=True)
+                                save_persistent_data()
+                                del st.session_state[f"confirm_delete_insulin_{idx}"]
+                                st.success("记录已删除")
+                                st.rerun()
+                        with col_no:
+                            if st.button("取消", key=f"confirm_insulin_no_{idx}"):
+                                del st.session_state[f"confirm_delete_insulin_{idx}"]
+                                st.rerun()
                 
                 # Insulin statistics
                 col1, col2, col3, col4 = st.columns(4)
@@ -853,16 +925,43 @@ else:
                 display_meals['食物详情'] = display_meals['food_details'].fillna('').apply(lambda x: x if x else '未记录详情')
                 display_meals['碳水化合物 (g)'] = display_meals['carbs'].round(1)
                 
-                # Show summary table with food details
-                summary_display = display_meals[['日期', '时间', '食物详情', '碳水化合物 (g)']].head(30)
-                st.dataframe(
-                    summary_display,
-                    use_container_width=True,
-                    height=400,
-                    column_config={
-                        "食物详情": st.column_config.TextColumn("食物详情", width="large")
-                    }
-                )
+                # Display records with delete functionality
+                st.write("**最近30条饮食记录:**")
+                meal_records = meal_data.head(30)
+                
+                for idx, row in meal_records.iterrows():
+                    col1, col2, col3, col4, col5 = st.columns([2, 1, 4, 1.5, 1])
+                    
+                    with col1:
+                        st.write(f"{row['timestamp'].strftime('%Y-%m-%d')}")
+                    with col2:
+                        st.write(f"{row['timestamp'].strftime('%H:%M')}")
+                    with col3:
+                        food_details = row['food_details'] if pd.notna(row['food_details']) and row['food_details'] else '未记录详情'
+                        st.write(food_details)
+                    with col4:
+                        st.write(f"{row['carbs']:.1f}g")
+                    with col5:
+                        if st.button("🗑️", key=f"delete_meal_{idx}", help="删除记录"):
+                            if f"confirm_delete_meal_{idx}" not in st.session_state:
+                                st.session_state[f"confirm_delete_meal_{idx}"] = True
+                                st.rerun()
+                            
+                    # Confirmation dialog
+                    if f"confirm_delete_meal_{idx}" in st.session_state:
+                        st.warning(f"确认删除 {row['timestamp'].strftime('%Y-%m-%d %H:%M')} 的饮食记录？")
+                        col_yes, col_no = st.columns(2)
+                        with col_yes:
+                            if st.button("确认删除", key=f"confirm_meal_yes_{idx}"):
+                                st.session_state.glucose_data = st.session_state.glucose_data.drop(idx).reset_index(drop=True)
+                                save_persistent_data()
+                                del st.session_state[f"confirm_delete_meal_{idx}"]
+                                st.success("记录已删除")
+                                st.rerun()
+                        with col_no:
+                            if st.button("取消", key=f"confirm_meal_no_{idx}"):
+                                del st.session_state[f"confirm_delete_meal_{idx}"]
+                                st.rerun()
                 
                 # Add daily summary statistics
                 col1, col2, col3 = st.columns(3)
