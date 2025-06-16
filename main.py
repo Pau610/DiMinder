@@ -139,16 +139,7 @@ def generate_daily_summary(selected_date):
 if 'glucose_data' not in st.session_state:
     st.session_state.glucose_data = load_persistent_data()
 
-# Optional reload button (restores original imported data)
-if st.button("重新加载原始数据", key="reload_data"):
-    try:
-        imported_data = pd.read_csv('processed_dm_data.csv')
-        imported_data['timestamp'] = pd.to_datetime(imported_data['timestamp'])
-        st.session_state.glucose_data = imported_data
-        save_persistent_data()  # Save as new persistent data
-        st.success("原始数据已重新加载")
-    except Exception as e:
-        st.error(f"数据重新加载失败: {e}")
+
 
 if 'selected_time' not in st.session_state:
     st.session_state.selected_time = datetime.now().time()
