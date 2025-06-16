@@ -99,6 +99,42 @@ def save_persistent_data():
     except Exception as e:
         st.error(f"数据保存失败: {e}")
 
+def generate_daily_summary(selected_date):
+    """Generate daily summary in the requested format"""
+    if st.session_state.glucose_data.empty:
+        return ""
+    
+    # Filter data for the selected date
+    data = st.session_state.glucose_data.copy()
+    data['date'] = pd.to_datetime(data['timestamp']).dt.date
+    daily_data = data[data['date'] == selected_date].sort_values('timestamp')
+    
+    if daily_data.empty:
+        return f"({selected_date}\n 无记录\n)"
+    
+    summary_lines = [f"({selected_date}"]
+    
+    for _, row in daily_data.iterrows():
+        time_str = pd.to_datetime(row['timestamp']).strftime('%H:%M')
+        
+        # Blood glucose record
+        if row['glucose_level'] > 0:
+            glucose_mmol = round(row['glucose_level'] / 18.0182, 1)
+            summary_lines.append(f" {time_str} => {glucose_mmol}mmol")
+        
+        # Insulin injection record
+        if row['insulin'] > 0:
+            insulin_dose = int(row['insulin']) if row['insulin'].is_integer() else row['insulin']
+            summary_lines.append(f" {time_str} => {insulin_dose}U {row['insulin_type']}")
+        
+        # Meal record
+        if row['carbs'] > 0 and row['food_details']:
+            carbs_total = int(row['carbs']) if row['carbs'].is_integer() else row['carbs']
+            summary_lines.append(f" {time_str} => {row['food_details']} [{carbs_total}g]")
+    
+    summary_lines.append(" )")
+    return "\n".join(summary_lines)
+
 # Initialize session state with persistent data
 if 'glucose_data' not in st.session_state:
     st.session_state.glucose_data = load_persistent_data()
@@ -127,6 +163,49 @@ except Exception as e:
 
 # Main title
 st.title("🩺 糖尿病管理系统")
+
+# Daily Summary Section
+st.markdown("### 📋 每日记录摘要")
+col1, col2 = st.columns([3, 1])
+
+with col1:
+    # Date selector for daily summary
+    if not st.session_state.glucose_data.empty:
+        data_dates = pd.to_datetime(st.session_state.glucose_data['timestamp']).dt.date.unique()
+        data_dates = sorted(data_dates, reverse=True)
+        
+        if data_dates:
+            selected_date = st.selectbox(
+                "选择日期查看摘要",
+                options=data_dates,
+                format_func=lambda x: x.strftime('%Y-%m-%d'),
+                key="summary_date_select"
+            )
+            
+            # Generate and display daily summary
+            daily_summary = generate_daily_summary(selected_date)
+            
+            if daily_summary:
+                st.text_area(
+                    "每日摘要 (可复制)",
+                    value=daily_summary,
+                    height=200,
+                    key="daily_summary_text"
+                )
+            else:
+                st.info("选择的日期没有记录")
+        else:
+            st.info("暂无数据可显示摘要")
+    else:
+        st.info("暂无数据可显示摘要")
+
+with col2:
+    st.markdown("**使用说明:**")
+    st.markdown("- 选择日期查看当日所有记录")
+    st.markdown("- 可直接复制摘要文本")
+    st.markdown("- 格式: 时间 => 记录内容")
+
+st.markdown("---")
 
 # Sidebar with mobile-friendly layout
 with st.sidebar:
@@ -703,13 +782,12 @@ else:
                 display_glucose = glucose_data[['timestamp', 'glucose_level']].copy()
                 display_glucose['日期'] = display_glucose['timestamp'].dt.strftime('%Y-%m-%d')
                 display_glucose['时间'] = display_glucose['timestamp'].dt.strftime('%H:%M')
-                display_glucose['血糖值 (mg/dL)'] = display_glucose['glucose_level'].round(1)
                 display_glucose['血糖值 (mmol/L)'] = (display_glucose['glucose_level'] / 18.0182).round(1)
                 display_glucose['血糖状态'] = display_glucose['glucose_level'].apply(
                     lambda x: '严重低血糖' if x <= 40 else ('低血糖' if x < 70 else ('正常' if x <= 180 else '高血糖'))
                 )
                 
-                summary_glucose = display_glucose[['日期', '时间', '血糖值 (mg/dL)', '血糖值 (mmol/L)', '血糖状态']].head(30)
+                summary_glucose = display_glucose[['日期', '时间', '血糖值 (mmol/L)', '血糖状态']].head(30)
                 st.dataframe(summary_glucose, use_container_width=True, height=400)
                 
                 # Glucose statistics
