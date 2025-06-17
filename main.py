@@ -529,10 +529,18 @@ with st.sidebar:
 
     st.markdown("---")
 
+    # Initialize expander states if not exists
+    if 'glucose_expander_open' not in st.session_state:
+        st.session_state.glucose_expander_open = True
+    if 'meal_expander_open' not in st.session_state:
+        st.session_state.meal_expander_open = True
+    if 'insulin_expander_open' not in st.session_state:
+        st.session_state.insulin_expander_open = True
+
     # Show selected input form
     if st.session_state.input_type == 'glucose':
         # Blood glucose input
-        with st.expander("记录血糖", expanded=True):
+        with st.expander("记录血糖", expanded=st.session_state.glucose_expander_open):
             # 添加日期选择器
             col1, col2 = st.columns(2)
             with col1:
@@ -590,7 +598,7 @@ with st.sidebar:
 
     elif st.session_state.input_type == 'meal':
         # Meal input
-        with st.expander("记录饮食", expanded=True):
+        with st.expander("记录饮食", expanded=st.session_state.meal_expander_open):
             # 添加日期选择器
             col1, col2 = st.columns(2)
             with col1:
@@ -690,7 +698,7 @@ with st.sidebar:
 
     elif st.session_state.input_type == 'insulin':
         # Insulin injection input
-        with st.expander("记录胰岛素注射", expanded=True):
+        with st.expander("记录胰岛素注射", expanded=st.session_state.insulin_expander_open):
             # 添加日期选择器
             col1, col2 = st.columns(2)
             with col1:
