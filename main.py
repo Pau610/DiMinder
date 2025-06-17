@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
 import pytz
 from models.glucose_predictor import GlucosePredictor
 from utils.data_processor import DataProcessor
@@ -549,14 +549,49 @@ if st.session_state.input_type == 'glucose':
                 hk_now = datetime.now(HK_TZ)
                 st.session_state.glucose_time_state = hk_now.time()
             
-            record_time = st.time_input(
-                "记录时间 (GMT+8)",
-                value=st.session_state.glucose_time_state,
-                key="glucose_time"
+            # 快速时间输入 - 支持4位数字格式
+            time_input_method = st.radio(
+                "时间输入方式",
+                ["快速输入 (如: 1442)", "时间选择器"],
+                key="glucose_time_method",
+                horizontal=True
             )
             
-            # 更新状态但不重置
-            st.session_state.glucose_time_state = record_time
+            if time_input_method == "快速输入 (如: 1442)":
+                time_text = st.text_input(
+                    "记录时间 (HHMM格式)",
+                    placeholder="例如: 1442 表示 14:42",
+                    key="glucose_time_text",
+                    max_chars=4
+                )
+                
+                # 验证和转换时间格式
+                if time_text and len(time_text) == 4 and time_text.isdigit():
+                    try:
+                        hour = int(time_text[:2])
+                        minute = int(time_text[2:])
+                        if 0 <= hour <= 23 and 0 <= minute <= 59:
+                            record_time = time(hour, minute)
+                            st.session_state.glucose_time_state = record_time
+                            st.success(f"时间: {record_time.strftime('%H:%M')}")
+                        else:
+                            st.error("请输入有效时间 (小时: 00-23, 分钟: 00-59)")
+                            record_time = st.session_state.glucose_time_state
+                    except:
+                        st.error("时间格式错误")
+                        record_time = st.session_state.glucose_time_state
+                elif time_text and len(time_text) > 0:
+                    st.error("请输入4位数字 (例如: 1442)")
+                    record_time = st.session_state.glucose_time_state
+                else:
+                    record_time = st.session_state.glucose_time_state
+            else:
+                record_time = st.time_input(
+                    "记录时间 (GMT+8)",
+                    value=st.session_state.glucose_time_state,
+                    key="glucose_time"
+                )
+                st.session_state.glucose_time_state = record_time
 
         glucose_mmol = st.number_input("血糖水平 (mmol/L)", min_value=2.0, max_value=22.0, value=None, step=0.1, key="glucose_level", placeholder="请输入血糖值")
 
@@ -608,14 +643,49 @@ elif st.session_state.input_type == 'meal':
                 hk_now = datetime.now(HK_TZ)
                 st.session_state.meal_time_state = hk_now.time()
             
-            meal_time = st.time_input(
-                "用餐时间 (GMT+8)",
-                value=st.session_state.meal_time_state,
-                key="meal_time_input"
+            # 快速时间输入 - 支持4位数字格式
+            meal_time_method = st.radio(
+                "时间输入方式",
+                ["快速输入 (如: 1442)", "时间选择器"],
+                key="meal_time_method",
+                horizontal=True
             )
             
-            # 更新状态但不重置
-            st.session_state.meal_time_state = meal_time
+            if meal_time_method == "快速输入 (如: 1442)":
+                meal_time_text = st.text_input(
+                    "用餐时间 (HHMM格式)",
+                    placeholder="例如: 1442 表示 14:42",
+                    key="meal_time_text",
+                    max_chars=4
+                )
+                
+                # 验证和转换时间格式
+                if meal_time_text and len(meal_time_text) == 4 and meal_time_text.isdigit():
+                    try:
+                        hour = int(meal_time_text[:2])
+                        minute = int(meal_time_text[2:])
+                        if 0 <= hour <= 23 and 0 <= minute <= 59:
+                            meal_time = time(hour, minute)
+                            st.session_state.meal_time_state = meal_time
+                            st.success(f"时间: {meal_time.strftime('%H:%M')}")
+                        else:
+                            st.error("请输入有效时间 (小时: 00-23, 分钟: 00-59)")
+                            meal_time = st.session_state.meal_time_state
+                    except:
+                        st.error("时间格式错误")
+                        meal_time = st.session_state.meal_time_state
+                elif meal_time_text and len(meal_time_text) > 0:
+                    st.error("请输入4位数字 (例如: 1442)")
+                    meal_time = st.session_state.meal_time_state
+                else:
+                    meal_time = st.session_state.meal_time_state
+            else:
+                meal_time = st.time_input(
+                    "用餐时间 (GMT+8)",
+                    value=st.session_state.meal_time_state,
+                    key="meal_time_input"
+                )
+                st.session_state.meal_time_state = meal_time
 
         # 初始化食物列表
         if 'meal_foods' not in st.session_state:
@@ -709,14 +779,49 @@ elif st.session_state.input_type == 'insulin':
                 hk_now = datetime.now(HK_TZ)
                 st.session_state.injection_time_state = hk_now.time()
             
-            injection_time = st.time_input(
-                "注射时间 (GMT+8)",
-                value=st.session_state.injection_time_state,
-                key="injection_time_input"
+            # 快速时间输入 - 支持4位数字格式
+            injection_time_method = st.radio(
+                "时间输入方式",
+                ["快速输入 (如: 1442)", "时间选择器"],
+                key="injection_time_method",
+                horizontal=True
             )
             
-            # 更新状态但不重置
-            st.session_state.injection_time_state = injection_time
+            if injection_time_method == "快速输入 (如: 1442)":
+                injection_time_text = st.text_input(
+                    "注射时间 (HHMM格式)",
+                    placeholder="例如: 1442 表示 14:42",
+                    key="injection_time_text",
+                    max_chars=4
+                )
+                
+                # 验证和转换时间格式
+                if injection_time_text and len(injection_time_text) == 4 and injection_time_text.isdigit():
+                    try:
+                        hour = int(injection_time_text[:2])
+                        minute = int(injection_time_text[2:])
+                        if 0 <= hour <= 23 and 0 <= minute <= 59:
+                            injection_time = time(hour, minute)
+                            st.session_state.injection_time_state = injection_time
+                            st.success(f"时间: {injection_time.strftime('%H:%M')}")
+                        else:
+                            st.error("请输入有效时间 (小时: 00-23, 分钟: 00-59)")
+                            injection_time = st.session_state.injection_time_state
+                    except:
+                        st.error("时间格式错误")
+                        injection_time = st.session_state.injection_time_state
+                elif injection_time_text and len(injection_time_text) > 0:
+                    st.error("请输入4位数字 (例如: 1442)")
+                    injection_time = st.session_state.injection_time_state
+                else:
+                    injection_time = st.session_state.injection_time_state
+            else:
+                injection_time = st.time_input(
+                    "注射时间 (GMT+8)",
+                    value=st.session_state.injection_time_state,
+                    key="injection_time_input"
+                )
+                st.session_state.injection_time_state = injection_time
 
         # 注射部位选择
         injection_site = st.selectbox(
