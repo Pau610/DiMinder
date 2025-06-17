@@ -52,7 +52,7 @@ class DataProcessor:
             return []
 
         # Get recent data patterns
-        hourly_insulin = data.set_index('timestamp').resample('h')['insulin'].mean()
+        hourly_insulin = data.set_index('timestamp').resample('H')['insulin'].mean()
         hourly_pattern = hourly_insulin.groupby(hourly_insulin.index.hour).mean()
 
         # Generate predictions
