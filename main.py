@@ -403,6 +403,10 @@ def validate_session_data():
     except:
         return False
 
+# Initialize session state page if not exists
+if 'page' not in st.session_state:
+    st.session_state.page = "记录数据"
+
 # Initialize or recover session state data
 if not validate_session_data():
     st.session_state.glucose_data = load_persistent_data()
@@ -954,6 +958,10 @@ else:
 
     # Mobile-first design completed - all legacy desktop code removed
 
+# Initialize page navigation if not exists
+if 'page' not in st.session_state:
+    st.session_state.page = "记录数据"
+
 # Main navigation
 if st.session_state.page == "记录数据":
     # Data entry page content
@@ -986,10 +994,49 @@ if st.session_state.page == "记录数据":
                 st.rerun()
 
 elif st.session_state.page == "查看图表":
-    show_charts()
+    # Charts page content - moved inline for mobile optimization
+    st.subheader("数据可视化")
+    
+    if not st.session_state.glucose_data.empty:
+        # Create glucose trend chart
+        glucose_data = st.session_state.glucose_data[st.session_state.glucose_data['glucose_level'] > 0]
+        if not glucose_data.empty:
+            fig = create_glucose_plot(glucose_data)
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info("暂无血糖数据可显示图表")
+    else:
+        st.info("暂无数据可显示图表")
     
 elif st.session_state.page == "每日总结":
-    show_daily_summary()
+    # Daily summary page content - moved inline for mobile optimization
+    st.subheader("每日记录摘要")
+    
+    if not st.session_state.glucose_data.empty:
+        data_dates = pd.to_datetime(st.session_state.glucose_data['timestamp']).dt.date.unique()
+        data_dates = sorted(data_dates, reverse=True)
+        
+        if data_dates:
+            selected_date = st.selectbox(
+                "选择日期查看摘要",
+                options=data_dates,
+                format_func=lambda x: x.strftime('%Y-%m-%d')
+            )
+            
+            daily_summary = generate_daily_summary(selected_date)
+            
+            if daily_summary:
+                st.text_area(
+                    "每日摘要 (可复制)",
+                    value=daily_summary,
+                    height=400
+                )
+            else:
+                st.info("选择的日期没有记录")
+        else:
+            st.info("暂无数据可显示摘要")
+    else:
+        st.info("暂无数据可显示摘要")
     
 elif st.session_state.page == "综合记录":
     # All records page content
