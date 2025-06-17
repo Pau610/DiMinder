@@ -16,7 +16,7 @@ HK_TZ = pytz.timezone('Asia/Hong_Kong')
 st.set_page_config(
     page_title="我的日記",
     layout="wide",
-    initial_sidebar_state="collapsed"  # 在移动端默认收起侧边栏
+    initial_sidebar_state="expanded"  # 保持侧边栏展开
 )
 
 # Custom CSS for mobile-friendly design
@@ -43,6 +43,23 @@ st.markdown("""
         padding: 0.5rem;
     }
 
+    /* 强制保持侧边栏展开 */
+    .css-1d391kg {
+        width: 21rem !important;
+    }
+    
+    /* 防止侧边栏自动收起 */
+    .css-1lcbmhc {
+        width: 21rem !important;
+        min-width: 21rem !important;
+    }
+    
+    /* 确保侧边栏内容可见 */
+    section[data-testid="stSidebar"] {
+        width: 21rem !important;
+        min-width: 21rem !important;
+    }
+
     /* 响应式布局调整 */
     @media (max-width: 768px) {
         .element-container {
@@ -52,6 +69,12 @@ st.markdown("""
         /* 调整图表容器 */
         .plotly-graph-div {
             height: 300px !important;
+        }
+        
+        /* 移动端也保持侧边栏展开 */
+        section[data-testid="stSidebar"] {
+            width: 18rem !important;
+            min-width: 18rem !important;
         }
     }
 </style>
