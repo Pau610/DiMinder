@@ -103,10 +103,9 @@ def create_prediction_plot(data, predictions):
     last_timestamp = data['timestamp'].max()
     future_timestamps = [last_timestamp + timedelta(hours=i) for i in range(1, 7)]
 
-    # Convert mg/dL to mmol/L for display
+    # Data is already in mmol/L, no conversion needed
     data_display = data.copy()
-    data_display['glucose_mmol'] = data_display['glucose_level'] / 18.0182
-    predictions_mmol = [p / 18.0182 for p in predictions]
+    predictions_mmol = predictions
 
     fig = go.Figure()
 
@@ -121,7 +120,7 @@ def create_prediction_plot(data, predictions):
     # Historical data in mmol/L
     fig.add_trace(go.Scatter(
         x=data_display['timestamp'],
-        y=data_display['glucose_mmol'],
+        y=data_display['glucose_level'],
         name='历史数据',
         line=dict(color='blue', width=2),
         mode='lines+markers',
