@@ -857,3 +857,213 @@ else:
                     st.info("暂无胰岛素注射记录")
             except Exception as e:
                 st.error(f"胰岛素数据显示错误: {str(e)}")
+
+# Detailed Data Summary Section
+st.markdown("---")
+st.markdown("### 📊 详细数据分析")
+
+if not st.session_state.glucose_data.empty:
+    # Recent Records Section
+    st.subheader("📝 最近记录")
+    
+    # Show recent entries
+    try:
+        recent_data = st.session_state.glucose_data.sort_values('timestamp', ascending=False).head(10)
+        
+        for _, row in recent_data.iterrows():
+            col1, col2, col3 = st.columns([2, 3, 1])
+            
+            with col1:
+                record_time = row['timestamp'].strftime('%m-%d %H:%M')
+                st.write(f"**{record_time}**")
+            
+            with col2:
+                record_details = []
+                if row['glucose_level'] > 0:
+                    glucose_mmol = round(row['glucose_level'] / 18.0182, 1)
+                    record_details.append(f"血糖: {glucose_mmol} mmol/L")
+                
+                if row['insulin'] > 0:
+                    insulin_dose = int(row['insulin']) if float(row['insulin']).is_integer() else row['insulin']
+                    record_details.append(f"胰岛素: {insulin_dose}U {row['insulin_type']}")
+                
+                if row['carbs'] > 0 and row['food_details']:
+                    carbs_total = int(row['carbs']) if float(row['carbs']).is_integer() else row['carbs']
+                    record_details.append(f"饮食: {row['food_details']} [{carbs_total}g]")
+                
+                if record_details:
+                    st.write(" | ".join(record_details))
+                else:
+                    st.write("无记录数据")
+            
+            with col3:
+                # Delete button for each record
+                if st.button("🗑️", key=f"delete_{row.name}", help="删除记录"):
+                    if f"confirm_delete_{row.name}" not in st.session_state:
+                        st.session_state[f"confirm_delete_{row.name}"] = True
+                        st.rerun()
+        
+        # Handle delete confirmations
+        for key in list(st.session_state.keys()):
+            if key.startswith("confirm_delete_"):
+                idx = int(key.split("_")[-1])
+                if key in st.session_state:
+                    st.warning(f"确认删除第 {idx+1} 条记录？")
+                    col_yes, col_no = st.columns(2)
+                    with col_yes:
+                        if st.button("确认删除", key=f"confirm_yes_{idx}"):
+                            st.session_state.glucose_data = st.session_state.glucose_data.drop(index=idx).reset_index(drop=True)
+                            save_persistent_data()
+                            del st.session_state[f"confirm_delete_{idx}"]
+                            st.success("记录已删除")
+                            st.rerun()
+                    with col_no:
+                        if st.button("取消", key=f"confirm_no_{idx}"):
+                            del st.session_state[f"confirm_delete_{idx}"]
+                            st.rerun()
+    
+    except Exception as e:
+        st.error(f"显示最近记录时发生错误: {str(e)}")
+
+    # Blood Glucose Analysis
+    st.subheader("🩸 血糖分析")
+    try:
+        glucose_data = st.session_state.glucose_data[st.session_state.glucose_data['glucose_level'] > 0]
+        
+        if not glucose_data.empty:
+            glucose_data_sorted = glucose_data.sort_values('timestamp', ascending=False)
+            
+            # Time-based analysis
+            glucose_data_sorted['date'] = glucose_data_sorted['timestamp'].dt.date
+            glucose_data_sorted['hour'] = glucose_data_sorted['timestamp'].dt.hour
+            
+            # Daily patterns
+            daily_patterns = glucose_data_sorted.groupby('hour')['glucose_level'].apply(lambda x: (x / 18.0182).mean())
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.write("**时段血糖均值 (mmol/L):**")
+                for hour, avg_glucose in daily_patterns.items():
+                    time_period = f"{hour:02d}:00-{hour:02d}:59"
+                    if avg_glucose < 3.9:
+                        st.error(f"{time_period}: {avg_glucose:.1f} ⚠️ 偏低")
+                    elif avg_glucose > 10.0:
+                        st.warning(f"{time_period}: {avg_glucose:.1f} ⚠️ 偏高")
+                    else:
+                        st.success(f"{time_period}: {avg_glucose:.1f} ✅ 正常")
+            
+            with col2:
+                # Recent trends
+                if len(glucose_data_sorted) >= 7:
+                    recent_week = glucose_data_sorted.head(7)['glucose_level'] / 18.0182
+                    week_avg = recent_week.mean()
+                    
+                    st.write("**近7次血糖趋势:**")
+                    st.metric("平均血糖", f"{week_avg:.1f} mmol/L")
+                    
+                    # Calculate trend
+                    if len(recent_week) >= 3:
+                        trend_slope = (recent_week.iloc[0] - recent_week.iloc[-1]) / len(recent_week)
+                        if trend_slope > 0.5:
+                            st.info("📈 血糖呈上升趋势")
+                        elif trend_slope < -0.5:
+                            st.info("📉 血糖呈下降趋势")
+                        else:
+                            st.info("📊 血糖相对稳定")
+        else:
+            st.info("暂无血糖数据进行分析")
+            
+    except Exception as e:
+        st.error(f"血糖分析错误: {str(e)}")
+
+    # Meal and Insulin Analysis
+    st.subheader("🍽️ 饮食与胰岛素分析")
+    try:
+        meal_data = st.session_state.glucose_data[st.session_state.glucose_data['carbs'] > 0]
+        insulin_data = st.session_state.glucose_data[st.session_state.glucose_data['insulin'] > 0]
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            if not meal_data.empty:
+                st.write("**最近饮食记录:**")
+                recent_meals = meal_data.sort_values('timestamp', ascending=False).head(5)
+                
+                for _, row in recent_meals.iterrows():
+                    meal_time = row['timestamp'].strftime('%m-%d %H:%M')
+                    carbs_amount = int(row['carbs']) if float(row['carbs']).is_integer() else row['carbs']
+                    st.write(f"• {meal_time}: {row['food_details']} ({carbs_amount}g碳水)")
+                
+                # Meal statistics
+                total_days = (meal_data['timestamp'].max() - meal_data['timestamp'].min()).days + 1
+                daily_carbs_avg = meal_data['carbs'].sum() / max(total_days, 1)
+                st.metric("日均碳水化合物", f"{daily_carbs_avg:.1f}g")
+            else:
+                st.info("暂无饮食记录")
+        
+        with col2:
+            if not insulin_data.empty:
+                st.write("**最近胰岛素注射:**")
+                recent_insulin = insulin_data.sort_values('timestamp', ascending=False).head(5)
+                
+                # Show recent injections with deletion option
+                for idx, row in recent_insulin.iterrows():
+                    col_display, col_delete = st.columns([4, 1])
+                    
+                    with col_display:
+                        injection_time = row['timestamp'].strftime('%m-%d %H:%M')
+                        injection_dose = int(row['insulin']) if float(row['insulin']).is_integer() else row['insulin']
+                        st.write(f"• {injection_time}: {injection_dose}U {row['insulin_type']} ({row['injection_site']})")
+                    
+                    with col_delete:
+                        if st.button("🗑️", key=f"del_insulin_{idx}", help="删除"):
+                            if f"confirm_delete_insulin_{idx}" not in st.session_state:
+                                st.session_state[f"confirm_delete_insulin_{idx}"] = True
+                                st.rerun()
+                
+                # Handle insulin deletion confirmations
+                for key in list(st.session_state.keys()):
+                    if key.startswith("confirm_delete_insulin_"):
+                        idx = int(key.split("_")[-1])
+                        if key in st.session_state:
+                            st.warning("确认删除此注射记录？")
+                            col_yes, col_no = st.columns(2)
+                            with col_yes:
+                                if st.button("确认", key=f"confirm_insulin_yes_{idx}"):
+                                    st.session_state.glucose_data = st.session_state.glucose_data.drop(index=idx).reset_index(drop=True)
+                                    save_persistent_data()
+                                    del st.session_state[f"confirm_delete_insulin_{idx}"]
+                                    st.success("记录已删除")
+                                    st.rerun()
+                            with col_no:
+                                if st.button("取消", key=f"confirm_insulin_no_{idx}"):
+                                    del st.session_state[f"confirm_delete_insulin_{idx}"]
+                                    st.rerun()
+                
+                # Insulin statistics
+                col1, col2, col3, col4 = st.columns(4)
+                with col1:
+                    total_insulin = insulin_data['insulin'].sum()
+                    st.metric("总胰岛素用量", f"{total_insulin:.1f}单位")
+                with col2:
+                    daily_avg = insulin_data.groupby(insulin_data['timestamp'].dt.date)['insulin'].sum().mean()
+                    st.metric("日均用量", f"{daily_avg:.1f}单位")
+                with col3:
+                    long_acting = insulin_data[insulin_data['insulin_type'] == '长效胰岛素']['insulin'].sum()
+                    st.metric("长效胰岛素", f"{long_acting:.1f}单位")
+                with col4:
+                    short_acting = insulin_data[insulin_data['insulin_type'] == '短效胰岛素']['insulin'].sum()
+                    st.metric("短效胰岛素", f"{short_acting:.1f}单位")
+            else:
+                st.info("暂无胰岛素注射记录")
+                
+    except Exception as e:
+        st.error(f"饮食与胰岛素分析错误: {str(e)}")
+
+else:
+    st.info("开始记录数据以查看详细分析")
+
+# Footer
+st.markdown("---")
+st.markdown("*💡 提示: 定期记录血糖、饮食和胰岛素数据有助于更好地管理糖尿病*")
