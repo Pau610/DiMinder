@@ -137,12 +137,12 @@ def load_persistent_data():
                     # Verify data integrity
                     required_columns = ['timestamp', 'glucose_level', 'carbs', 'insulin']
                     if all(col in data.columns for col in required_columns):
-                        # Convert existing mg/dL glucose values to mmol/L
-                        # Values > 30 are likely in mg/dL and need conversion
+                        # Convert mg/dL glucose values to mmol/L for exclusive mmol/L storage
+                        # Values like 221.62386 and 183.78564 are in mg/dL and need conversion
                         glucose_mask = data['glucose_level'] > 30
                         if glucose_mask.any():
                             data.loc[glucose_mask, 'glucose_level'] = data.loc[glucose_mask, 'glucose_level'] / 18.0182
-                            # Save converted data immediately
+                            # Save converted data to ensure mmol/L storage
                             data.to_csv('user_data.csv', index=False)
                         
                         # If this is not the primary file but has data, restore it
