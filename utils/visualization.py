@@ -7,37 +7,41 @@ def create_glucose_plot(data, date_range=None):
         start_date, end_date = date_range
         data = data[(data['timestamp'] >= start_date) & (data['timestamp'] <= end_date)]
 
+    # Convert mg/dL to mmol/L for display
+    data_display = data.copy()
+    data_display['glucose_mmol'] = data_display['glucose_level'] / 18.0182
+
     fig = go.Figure()
 
-    # Add glucose readings
+    # Add glucose readings in mmol/L
     fig.add_trace(go.Scatter(
-        x=data['timestamp'],
-        y=data['glucose_level'],
+        x=data_display['timestamp'],
+        y=data_display['glucose_mmol'],
         name='血糖值',
         line=dict(color='blue', width=2),
         mode='lines+markers',
         marker=dict(size=10)  # 增大标记点以便触控
     ))
 
-    # Add danger zone for hypoglycemia (below 40 mg/dL)
+    # Add danger zone for hypoglycemia (below 2.2 mmol/L = 40 mg/dL)
     fig.add_hrect(
-        y0=0, y1=40,
+        y0=0, y1=2.2,
         fillcolor="red", opacity=0.1,
         layer="below", line_width=0,
         name="低血糖危险区域"
     )
 
-    # Add target range
-    fig.add_hline(y=40, line_dash="dash", line_color="red", opacity=0.8,
+    # Add target range lines in mmol/L
+    fig.add_hline(y=2.2, line_dash="dash", line_color="red", opacity=0.8,
                   annotation_text="低血糖警戒线", annotation_position="top right")
-    fig.add_hline(y=70, line_dash="dash", line_color="orange", opacity=0.5)
-    fig.add_hline(y=180, line_dash="dash", line_color="orange", opacity=0.5)
+    fig.add_hline(y=3.9, line_dash="dash", line_color="orange", opacity=0.5)
+    fig.add_hline(y=10.0, line_dash="dash", line_color="orange", opacity=0.5)
 
     # Update layout with mobile-friendly features
     fig.update_layout(
         title='血糖读数',
         xaxis_title='时间',
-        yaxis_title='血糖值 (mg/dL)',
+        yaxis_title='血糖值 (mmol/L)',
         hovermode='x unified',
         showlegend=True,
         legend=dict(
@@ -55,7 +59,7 @@ def create_glucose_plot(data, date_range=None):
         ),
         yaxis=dict(
             tickfont=dict(size=10),
-            range=[0, max(200, data['glucose_level'].max() * 1.1)]  # 确保危险区域可见
+            range=[0, max(11.1, data_display['glucose_mmol'].max() * 1.1)]  # 确保危险区域可见
         ),
         updatemenus=[
             dict(
@@ -100,46 +104,51 @@ def create_prediction_plot(data, predictions):
     last_timestamp = data['timestamp'].max()
     future_timestamps = [last_timestamp + timedelta(hours=i) for i in range(1, 7)]
 
+    # Convert mg/dL to mmol/L for display
+    data_display = data.copy()
+    data_display['glucose_mmol'] = data_display['glucose_level'] / 18.0182
+    predictions_mmol = [p / 18.0182 for p in predictions]
+
     fig = go.Figure()
 
-    # Add danger zone for hypoglycemia
+    # Add danger zone for hypoglycemia (below 2.2 mmol/L)
     fig.add_hrect(
-        y0=0, y1=40,
+        y0=0, y1=2.2,
         fillcolor="red", opacity=0.1,
         layer="below", line_width=0,
         name="低血糖危险区域"
     )
 
-    # Historical data
+    # Historical data in mmol/L
     fig.add_trace(go.Scatter(
-        x=data['timestamp'],
-        y=data['glucose_level'],
+        x=data_display['timestamp'],
+        y=data_display['glucose_mmol'],
         name='历史数据',
         line=dict(color='blue', width=2),
         mode='lines+markers',
         marker=dict(size=10)
     ))
 
-    # Predictions
+    # Predictions in mmol/L
     fig.add_trace(go.Scatter(
         x=future_timestamps,
-        y=predictions,
+        y=predictions_mmol,
         name='预测值',
         line=dict(color='red', width=2, dash='dash'),
         mode='lines'
     ))
 
-    # Add warning lines
-    fig.add_hline(y=40, line_dash="dash", line_color="red", opacity=0.8,
+    # Add warning lines in mmol/L
+    fig.add_hline(y=2.2, line_dash="dash", line_color="red", opacity=0.8,
                   annotation_text="低血糖警戒线", annotation_position="top right")
-    fig.add_hline(y=70, line_dash="dash", line_color="orange", opacity=0.5)
-    fig.add_hline(y=180, line_dash="dash", line_color="orange", opacity=0.5)
+    fig.add_hline(y=3.9, line_dash="dash", line_color="orange", opacity=0.5)
+    fig.add_hline(y=10.0, line_dash="dash", line_color="orange", opacity=0.5)
 
     # Update layout with mobile-friendly features
     fig.update_layout(
         title='血糖预测（未来6小时）',
         xaxis_title='时间',
-        yaxis_title='血糖值 (mg/dL)',
+        yaxis_title='血糖值 (mmol/L)',
         hovermode='x unified',
         showlegend=True,
         legend=dict(

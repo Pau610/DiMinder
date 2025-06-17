@@ -575,9 +575,11 @@ else:
             recent_data = data_sorted.tail(5)
             col1, col2 = st.columns(2)
             with col1:
-                st.metric("最新血糖", f"{recent_data['glucose_level'].iloc[-1]:.1f} mg/dL")
+                latest_mmol = round(recent_data['glucose_level'].iloc[-1] / 18.0182, 1)
+                st.metric("最新血糖", f"{latest_mmol} mmol/L")
             with col2:
-                st.metric("平均值 (最近5次)", f"{recent_data['glucose_level'].mean():.1f} mg/dL")
+                avg_mmol = round(recent_data['glucose_level'].mean() / 18.0182, 1)
+                st.metric("平均值 (最近5次)", f"{avg_mmol} mmol/L")
 
             # 血糖预警检查
             recent_glucose = recent_data['glucose_level'].iloc[-1]
