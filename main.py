@@ -954,92 +954,63 @@ else:
 
     # Mobile-first design completed - all legacy desktop code removed
 
-# Page navigation
+# Main navigation
 if st.session_state.page == "记录数据":
-    show_data_entry()
+    # Data entry page content
+    st.subheader("记录数据")
+    
+    # Input sections organized for mobile
+    with st.container():
+        st.write("**血糖记录**")
+        col1, col2 = st.columns([2, 1])
+        with col1:
+            glucose_mg = st.number_input("血糖值 (mg/dL)", min_value=0.0, max_value=600.0, step=1.0, value=0.0)
+        with col2:
+            # Display mmol/L equivalent
+            if glucose_mg > 0:
+                glucose_mmol = glucose_mg / 18.0182
+                st.metric("mmol/L", f"{glucose_mmol:.1f}")
+        
+        if st.button("记录血糖", use_container_width=True):
+            if glucose_mg > 0:
+                new_data = pd.DataFrame({
+                    'timestamp': [datetime.now()],
+                    'glucose_level': [glucose_mg],
+                    'insulin': [0.0],
+                    'carbs': [0.0],
+                    'notes': ['']
+                })
+                st.session_state.glucose_data = pd.concat([st.session_state.glucose_data, new_data], ignore_index=True)
+                save_persistent_data()
+                st.success("血糖记录已保存")
+                st.rerun()
+
 elif st.session_state.page == "查看图表":
     show_charts()
+    
 elif st.session_state.page == "每日总结":
     show_daily_summary()
+    
 elif st.session_state.page == "综合记录":
-    show_all_records()
-                            x=pred_times,
-                            y=real_time_predictions_mmol,
-                            name='预测值',
-                            line=dict(color='red', width=2)
-                        ))
-
-                        fig_real_time.update_layout(
-                            title='未来30分钟血糖预测',
-                            xaxis_title='时间',
-                            yaxis_title='血糖值 (mmol/L)',
-                            height=300
-                        )
-                        st.plotly_chart(fig_real_time, use_container_width=True)
-
-                        # Check if any predicted values are dangerous (convert to mmol/L thresholds)
-                        # 40 mg/dL = 2.2 mmol/L, 70 mg/dL = 3.9 mmol/L, 180 mg/dL = 10.0 mmol/L
-                        predictions_mmol = [p / 18.0182 for p in real_time_predictions]
-                        if np.any(np.array(predictions_mmol) <= 2.2):
-                            st.error("⚠️ 危险！预测未来30分钟内可能出现严重低血糖，请立即采取预防措施！")
-                        elif np.any(np.array(predictions_mmol) < 3.9):
-                            st.warning("⚠️ 注意！预测未来30分钟内可能出现低血糖，请做好准备。")
-
-                        if np.any(np.array(predictions_mmol) > 10.0) or np.any(np.array(predictions_mmol) < 3.9):
-                            st.warning("⚠️ 预测显示血糖可能会超出目标范围，请注意监测")
-                else:
-                    st.info("需要至少1小时的数据来进行实时预测")
-
-                # Insulin needs prediction
-                st.subheader("胰岛素需求预测")
-                if len(data_filtered) >= 24:
-                    insulin_predictions = st.session_state.processor.predict_insulin_needs(data_filtered)
-                    if len(insulin_predictions) > 0:
-                        pred_hours = [datetime.now() + timedelta(hours=i) for i in range(24)]
-                        insulin_df = pd.DataFrame({
-                            'timestamp': pred_hours,
-                            'insulin': insulin_predictions
-                        })
-
-                        fig_insulin = go.Figure()
-                        fig_insulin.add_trace(go.Scatter(
-                            x=pred_hours,
-                            y=insulin_predictions,
-                            name='预计胰岛素需求',
-                            line=dict(color='purple', width=2)
-                        ))
-
-                        fig_insulin.update_layout(
-                            title='24小时胰岛素需求预测',
-                            xaxis_title='时间',
-                            yaxis_title='胰岛素剂量 (单位)',
-                            height=300
-                        )
-                        st.plotly_chart(fig_insulin, use_container_width=True)
-                else:
-                    st.info("需要至少24小时的数据来预测胰岛素需求")
-
-                # Injection site analysis
-                st.subheader("注射部位分析")
-                site_stats = st.session_state.processor.analyze_injection_sites(data_filtered)
-                if site_stats:
-                    site_df = pd.DataFrame(site_stats)
-                    st.write("注射部位使用统计：")
-                    st.dataframe(site_df)
-                else:
-                    st.info("暂无注射部位数据")
-
-            except Exception as e:
-                st.error(f"生成图表时发生错误: {str(e)}")
-
-        with col2:
-            st.subheader("最近统计")
-            try:
-                recent_data = data_sorted.tail(5)
-                latest_glucose_mmol = recent_data['glucose_level'].iloc[-1] / 18.0182
-                avg_glucose_mmol = recent_data['glucose_level'].mean() / 18.0182
-                st.metric("最新血糖", f"{latest_glucose_mmol:.1f} mmol/L")
-                st.metric("平均值 (最近5次)", f"{avg_glucose_mmol:.1f} mmol/L")
+    # All records page content
+    st.subheader("综合记录总览")
+    try:
+        all_data = st.session_state.glucose_data.sort_values('timestamp', ascending=False)
+        if not all_data.empty:
+            # Create comprehensive display
+            display_all = all_data.copy()
+            display_all['日期'] = display_all['timestamp'].dt.strftime('%Y-%m-%d')
+            display_all['时间'] = display_all['timestamp'].dt.strftime('%H:%M')
+            display_all['血糖 (mmol/L)'] = display_all['glucose_level'].apply(lambda x: f"{x/18.0182:.1f}" if x > 0 else "-")
+            display_all['胰岛素 (单位)'] = display_all['insulin'].apply(lambda x: f"{x:.1f}" if x > 0 else "-")
+            display_all['碳水 (g)'] = display_all['carbs'].apply(lambda x: f"{x:.1f}" if x > 0 else "-")
+            
+            summary_all = display_all[['日期', '时间', '血糖 (mmol/L)', '胰岛素 (单位)', '碳水 (g)']].head(50)
+            st.dataframe(summary_all, use_container_width=True, height=500)
+        else:
+            st.info("暂无任何记录")
+    except Exception as e:
+        st.error(f"显示综合记录时发生错误: {str(e)}")
 
                 # 血糖预警检查
                 recent_glucose = recent_data['glucose_level'].iloc[-1]
