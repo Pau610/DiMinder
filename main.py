@@ -591,26 +591,26 @@ with tab1:
             # 添加日期选择器
             col1, col2 = st.columns(2)
             with col1:
-            hk_today = datetime.now(HK_TZ).date()
-            meal_date = st.date_input(
-                "用餐日期 (GMT+8)",
-                hk_today,
-                max_value=hk_today,
-                key="meal_date"
-            )
-        with col2:
-            # 初始化用餐时间状态 (HK时区)
-            if 'meal_time_state' not in st.session_state:
-                hk_now = datetime.now(HK_TZ)
-                st.session_state.meal_time_state = hk_now.time()
-            
-            # 快速时间输入 - 支持4位数字格式
-            meal_time_method = st.radio(
-                "时间输入方式",
-                ["快速输入 (如: 1442)", "时间选择器"],
-                key="meal_time_method",
-                horizontal=True
-            )
+                hk_today = datetime.now(HK_TZ).date()
+                meal_date = st.date_input(
+                    "用餐日期 (GMT+8)",
+                    hk_today,
+                    max_value=hk_today,
+                    key="meal_date"
+                )
+            with col2:
+                # 初始化用餐时间状态 (HK时区)
+                if 'meal_time_state' not in st.session_state:
+                    hk_now = datetime.now(HK_TZ)
+                    st.session_state.meal_time_state = hk_now.time()
+                
+                # 快速时间输入 - 支持4位数字格式
+                meal_time_method = st.radio(
+                    "时间输入方式",
+                    ["快速输入 (如: 1442)", "时间选择器"],
+                    key="meal_time_method",
+                    horizontal=True
+                )
             
             if meal_time_method == "快速输入 (如: 1442)":
                 meal_time_text = st.text_input(
@@ -720,69 +720,69 @@ with tab1:
             else:
                 st.info("请添加食物和碳水化合物含量")
 
-elif st.session_state.input_type == 'insulin':
-    # Insulin injection input - using container instead of expander to prevent closing
-    st.subheader("💉 记录胰岛素注射")
-    with st.container(border=True):
-        # 添加日期选择器
-        col1, col2 = st.columns(2)
-        with col1:
-            hk_today = datetime.now(HK_TZ).date()
-            injection_date = st.date_input(
-                "注射日期 (GMT+8)",
-                hk_today,
-                max_value=hk_today,
-                key="injection_date"
-            )
-        with col2:
-            # 初始化注射时间状态 (HK时区)
-            if 'injection_time_state' not in st.session_state:
-                hk_now = datetime.now(HK_TZ)
-                st.session_state.injection_time_state = hk_now.time()
-            
-            # 快速时间输入 - 支持4位数字格式
-            injection_time_method = st.radio(
-                "时间输入方式",
-                ["快速输入 (如: 1442)", "时间选择器"],
-                key="injection_time_method",
-                horizontal=True
-            )
-            
-            if injection_time_method == "快速输入 (如: 1442)":
-                injection_time_text = st.text_input(
-                    "注射时间 (HHMM格式)",
-                    placeholder="例如: 1442 表示 14:42",
-                    key="injection_time_text",
-                    max_chars=4
+    elif st.session_state.input_type == 'insulin':
+        # Insulin injection input - using container instead of expander to prevent closing
+        st.subheader("💉 记录胰岛素注射")
+        with st.container(border=True):
+            # 添加日期选择器
+            col1, col2 = st.columns(2)
+            with col1:
+                hk_today = datetime.now(HK_TZ).date()
+                injection_date = st.date_input(
+                    "注射日期 (GMT+8)",
+                    hk_today,
+                    max_value=hk_today,
+                    key="injection_date"
+                )
+            with col2:
+                # 初始化注射时间状态 (HK时区)
+                if 'injection_time_state' not in st.session_state:
+                    hk_now = datetime.now(HK_TZ)
+                    st.session_state.injection_time_state = hk_now.time()
+                
+                # 快速时间输入 - 支持4位数字格式
+                injection_time_method = st.radio(
+                    "时间输入方式",
+                    ["快速输入 (如: 1442)", "时间选择器"],
+                    key="injection_time_method",
+                    horizontal=True
                 )
                 
-                # 验证和转换时间格式
-                if injection_time_text and len(injection_time_text) == 4 and injection_time_text.isdigit():
-                    try:
-                        hour = int(injection_time_text[:2])
-                        minute = int(injection_time_text[2:])
-                        if 0 <= hour <= 23 and 0 <= minute <= 59:
-                            injection_time = time(hour, minute)
-                            st.session_state.injection_time_state = injection_time
-                            st.success(f"时间: {injection_time.strftime('%H:%M')}")
-                        else:
-                            st.error("请输入有效时间 (小时: 00-23, 分钟: 00-59)")
+                if injection_time_method == "快速输入 (如: 1442)":
+                    injection_time_text = st.text_input(
+                        "注射时间 (HHMM格式)",
+                        placeholder="例如: 1442 表示 14:42",
+                        key="injection_time_text",
+                        max_chars=4
+                    )
+                    
+                    # 验证和转换时间格式
+                    if injection_time_text and len(injection_time_text) == 4 and injection_time_text.isdigit():
+                        try:
+                            hour = int(injection_time_text[:2])
+                            minute = int(injection_time_text[2:])
+                            if 0 <= hour <= 23 and 0 <= minute <= 59:
+                                injection_time = time(hour, minute)
+                                st.session_state.injection_time_state = injection_time
+                                st.success(f"时间: {injection_time.strftime('%H:%M')}")
+                            else:
+                                st.error("请输入有效时间 (小时: 00-23, 分钟: 00-59)")
+                                injection_time = st.session_state.injection_time_state
+                        except:
+                            st.error("时间格式错误")
                             injection_time = st.session_state.injection_time_state
-                    except:
-                        st.error("时间格式错误")
+                    elif injection_time_text and len(injection_time_text) > 0:
+                        st.error("请输入4位数字 (例如: 1442)")
                         injection_time = st.session_state.injection_time_state
-                elif injection_time_text and len(injection_time_text) > 0:
-                    st.error("请输入4位数字 (例如: 1442)")
-                    injection_time = st.session_state.injection_time_state
+                    else:
+                        injection_time = st.session_state.injection_time_state
                 else:
-                    injection_time = st.session_state.injection_time_state
-            else:
-                injection_time = st.time_input(
-                    "注射时间 (GMT+8)",
-                    value=st.session_state.injection_time_state,
-                    key="injection_time_input"
-                )
-                st.session_state.injection_time_state = injection_time
+                    injection_time = st.time_input(
+                        "注射时间 (GMT+8)",
+                        value=st.session_state.injection_time_state,
+                        key="injection_time_input"
+                    )
+                    st.session_state.injection_time_state = injection_time
 
         # 注射部位选择
         injection_site = st.selectbox(
