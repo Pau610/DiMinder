@@ -7,15 +7,16 @@ def create_glucose_plot(data, date_range=None):
         start_date, end_date = date_range
         data = data[(data['timestamp'] >= start_date) & (data['timestamp'] <= end_date)]
 
-    # Data is already in mmol/L, no conversion needed
+    # Convert mg/dL to mmol/L for display
     data_display = data.copy()
+    data_display['glucose_mmol'] = data_display['glucose_level'] / 18.0182
 
     fig = go.Figure()
 
     # Add glucose readings in mmol/L
     fig.add_trace(go.Scatter(
         x=data_display['timestamp'],
-        y=data_display['glucose_level'],
+        y=data_display['glucose_mmol'],
         name='血糖值',
         line=dict(color='blue', width=2),
         mode='lines+markers',
@@ -103,9 +104,10 @@ def create_prediction_plot(data, predictions):
     last_timestamp = data['timestamp'].max()
     future_timestamps = [last_timestamp + timedelta(hours=i) for i in range(1, 7)]
 
-    # Data is already in mmol/L, no conversion needed
+    # Convert mg/dL to mmol/L for display
     data_display = data.copy()
-    predictions_mmol = predictions
+    data_display['glucose_mmol'] = data_display['glucose_level'] / 18.0182
+    predictions_mmol = [p / 18.0182 for p in predictions]
 
     fig = go.Figure()
 
@@ -120,7 +122,7 @@ def create_prediction_plot(data, predictions):
     # Historical data in mmol/L
     fig.add_trace(go.Scatter(
         x=data_display['timestamp'],
-        y=data_display['glucose_level'],
+        y=data_display['glucose_mmol'],
         name='历史数据',
         line=dict(color='blue', width=2),
         mode='lines+markers',

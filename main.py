@@ -137,14 +137,6 @@ def load_persistent_data():
                     # Verify data integrity
                     required_columns = ['timestamp', 'glucose_level', 'carbs', 'insulin']
                     if all(col in data.columns for col in required_columns):
-                        # Convert mg/dL glucose values to mmol/L for exclusive mmol/L storage
-                        # Values like 221.62386 and 183.78564 are in mg/dL and need conversion
-                        glucose_mask = data['glucose_level'] > 30
-                        if glucose_mask.any():
-                            data.loc[glucose_mask, 'glucose_level'] = data.loc[glucose_mask, 'glucose_level'] / 18.0182
-                            # Save converted data to ensure mmol/L storage
-                            data.to_csv('user_data.csv', index=False)
-                        
                         # If this is not the primary file but has data, restore it
                         if source_file != 'user_data.csv' and not data.empty:
                             import shutil
@@ -257,7 +249,7 @@ def generate_daily_summary(selected_date):
         
         # Blood glucose record
         if row['glucose_level'] > 0:
-            glucose_mmol = round(row['glucose_level'], 1)
+            glucose_mmol = round(row['glucose_level'] / 18.0182, 1)
             summary_lines.append(f" {time_str} => {glucose_mmol}mmol")
         
         # Insulin injection record
@@ -453,10 +445,11 @@ with st.sidebar:
             if st.button("添加血糖记录", use_container_width=True):
                 if glucose_mmol is not None:
                     record_datetime = datetime.combine(record_date, record_time)
-                    # Store glucose level directly in mmol/L
+                    # Convert mmol/L to mg/dL for internal storage
+                    glucose_level_mgdl = glucose_mmol * 18.0182
                     new_data = {
                         'timestamp': record_datetime,
-                        'glucose_level': glucose_mmol,
+                        'glucose_level': glucose_level_mgdl,
                         'carbs': 0,
                         'insulin': 0,
                         'insulin_type': '',
@@ -671,14 +664,14 @@ with st.sidebar:
 # 血糖预警系统 (显著位置)
 if not st.session_state.glucose_data.empty:
     latest_glucose = st.session_state.glucose_data['glucose_level'].iloc[-1]
-    if latest_glucose <= 2.2:  # 40 mg/dL = 2.2 mmol/L
-        st.error("🚨 严重低血糖预警！当前血糖: {:.1f} mmol/L - 请立即处理！".format(latest_glucose))
+    if latest_glucose <= 40:
+        st.error("🚨 严重低血糖预警！当前血糖: {:.1f} mg/dL - 请立即处理！".format(latest_glucose))
         st.markdown("**紧急处理建议：**")
         st.markdown("- 立即摄入15-20克快速碳水化合物")
         st.markdown("- 15分钟后重新测量血糖")
         st.markdown("- 如无改善请寻求医疗帮助")
-    elif latest_glucose < 3.9:  # 70 mg/dL = 3.9 mmol/L
-        st.warning("⚠️ 低血糖预警！当前血糖: {:.1f} mmol/L - 请及时处理".format(latest_glucose))
+    elif latest_glucose < 70:
+        st.warning("⚠️ 低血糖预警！当前血糖: {:.1f} mg/dL - 请及时处理".format(latest_glucose))
 
 # Main content with responsive layout
 if st.session_state.glucose_data.empty:
@@ -1001,16 +994,16 @@ else:
             st.subheader("最近统计")
             try:
                 recent_data = data_sorted.tail(5)
-                latest_glucose_mmol = recent_data['glucose_level'].iloc[-1]
-                avg_glucose_mmol = recent_data['glucose_level'].mean()
+                latest_glucose_mmol = recent_data['glucose_level'].iloc[-1] / 18.0182
+                avg_glucose_mmol = recent_data['glucose_level'].mean() / 18.0182
                 st.metric("最新血糖", f"{latest_glucose_mmol:.1f} mmol/L")
                 st.metric("平均值 (最近5次)", f"{avg_glucose_mmol:.1f} mmol/L")
 
                 # 血糖预警检查
                 recent_glucose = recent_data['glucose_level'].iloc[-1]
-                if recent_glucose <= 2.2:  # 40 mg/dL = 2.2 mmol/L
+                if recent_glucose <= 40:
                     st.error("⚠️ 危险！当前血糖值过低，请立即处理！")
-                elif recent_glucose < 3.9:  # 70 mg/dL = 3.9 mmol/L
+                elif recent_glucose < 70:
                     st.warning("⚠️ 注意！当前血糖值偏低，请及时补充糖分。")
 
                 # Insulin recommendation
