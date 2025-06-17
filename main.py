@@ -14,7 +14,7 @@ HK_TZ = pytz.timezone('Asia/Hong_Kong')
 
 # Page config
 st.set_page_config(
-    page_title="糖尿病管理系统",
+    page_title="我的日記",
     layout="wide",
     initial_sidebar_state="collapsed"  # 在移动端默认收起侧边栏
 )
