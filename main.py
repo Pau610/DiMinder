@@ -613,10 +613,15 @@ else:
 
                     fig_real_time = go.Figure()
 
+                    # Convert to mmol/L for display
+                    real_time_predictions_mmol = [p / 18.0182 for p in real_time_predictions]
+                    upper_bound_mmol = [p / 18.0182 for p in upper_bound]
+                    lower_bound_mmol = [p / 18.0182 for p in lower_bound]
+
                     # Add prediction intervals
                     fig_real_time.add_trace(go.Scatter(
                         x=pred_times + pred_times[::-1],
-                        y=np.concatenate([upper_bound, lower_bound[::-1]]),
+                        y=np.concatenate([upper_bound_mmol, lower_bound_mmol[::-1]]),
                         fill='toself',
                         fillcolor='rgba(0,176,246,0.2)',
                         line=dict(color='rgba(255,255,255,0)'),
@@ -626,7 +631,7 @@ else:
                     # Add predictions
                     fig_real_time.add_trace(go.Scatter(
                         x=pred_times,
-                        y=real_time_predictions,
+                        y=real_time_predictions_mmol,
                         name='预测值',
                         line=dict(color='red', width=2)
                     ))
@@ -634,7 +639,7 @@ else:
                     fig_real_time.update_layout(
                         title='未来30分钟血糖预测',
                         xaxis_title='时间',
-                        yaxis_title='血糖值 (mg/dL)',
+                        yaxis_title='血糖值 (mmol/L)',
                         height=300
                     )
                     st.plotly_chart(fig_real_time, use_container_width=True)
@@ -834,8 +839,10 @@ else:
             st.subheader("最近统计")
             try:
                 recent_data = data_sorted.tail(5)
-                st.metric("最新血糖", f"{recent_data['glucose_level'].iloc[-1]:.1f} mg/dL")
-                st.metric("平均值 (最近5次)", f"{recent_data['glucose_level'].mean():.1f} mg/dL")
+                latest_glucose_mmol = recent_data['glucose_level'].iloc[-1] / 18.0182
+                avg_glucose_mmol = recent_data['glucose_level'].mean() / 18.0182
+                st.metric("最新血糖", f"{latest_glucose_mmol:.1f} mmol/L")
+                st.metric("平均值 (最近5次)", f"{avg_glucose_mmol:.1f} mmol/L")
 
                 # 血糖预警检查
                 recent_glucose = recent_data['glucose_level'].iloc[-1]
