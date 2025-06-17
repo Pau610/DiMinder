@@ -457,84 +457,45 @@ except Exception as e:
 # Main title
 st.title("📔 我的日記")
 
-# Daily Summary Section
-st.markdown("### 📋 每日记录摘要")
-col1, col2 = st.columns([3, 1])
+# Navigation tabs
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["📝 数据录入", "🩸 血糖记录", "🍽️ 饮食记录", "💉 胰岛素记录", "📋 综合摘要"])
 
-with col1:
-    # Date selector for daily summary
-    if not st.session_state.glucose_data.empty:
-        data_dates = pd.to_datetime(st.session_state.glucose_data['timestamp']).dt.date.unique()
-        data_dates = sorted(data_dates, reverse=True)
-        
-        if data_dates:
-            selected_date = st.selectbox(
-                "选择日期查看摘要",
-                options=data_dates,
-                format_func=lambda x: x.strftime('%Y-%m-%d'),
-                key="summary_date_select"
-            )
-            
-            # Generate and display daily summary
-            daily_summary = generate_daily_summary(selected_date)
-            
-            if daily_summary:
-                st.text_area(
-                    "每日摘要 (可复制)",
-                    value=daily_summary,
-                    height=200,
-                    key="daily_summary_text"
-                )
-            else:
-                st.info("选择的日期没有记录")
-        else:
-            st.info("暂无数据可显示摘要")
-    else:
-        st.info("暂无数据可显示摘要")
+with tab1:
+    # Mobile-friendly data input section in main area
+    st.markdown("### 📝 数据录入")
 
-with col2:
-    st.markdown("**使用说明:**")
-    st.markdown("- 选择日期查看当日所有记录")
-    st.markdown("- 可直接复制摘要文本")
-    st.markdown("- 格式: 时间 => 记录内容")
+    # Data type selection buttons
+    st.subheader("选择记录类型")
+    col1, col2, col3 = st.columns(3)
 
-st.markdown("---")
+    with col1:
+        glucose_selected = st.button("血糖记录", use_container_width=True, type="primary" if st.session_state.get('input_type') == 'glucose' else "secondary")
+        if glucose_selected:
+            st.session_state.input_type = 'glucose'
 
-# Mobile-friendly data input section in main area
-st.markdown("### 📝 数据录入")
+    with col2:
+        meal_selected = st.button("饮食记录", use_container_width=True, type="primary" if st.session_state.get('input_type') == 'meal' else "secondary")
+        if meal_selected:
+            st.session_state.input_type = 'meal'
 
-# Data type selection buttons
-st.subheader("选择记录类型")
-col1, col2, col3 = st.columns(3)
+    with col3:
+        insulin_selected = st.button("胰岛素注射", use_container_width=True, type="primary" if st.session_state.get('input_type') == 'insulin' else "secondary")
+        if insulin_selected:
+            st.session_state.input_type = 'insulin'
 
-with col1:
-    glucose_selected = st.button("血糖记录", use_container_width=True, type="primary" if st.session_state.get('input_type') == 'glucose' else "secondary")
-    if glucose_selected:
+    # Initialize input type if not set
+    if 'input_type' not in st.session_state:
         st.session_state.input_type = 'glucose'
 
-with col2:
-    meal_selected = st.button("饮食记录", use_container_width=True, type="primary" if st.session_state.get('input_type') == 'meal' else "secondary")
-    if meal_selected:
-        st.session_state.input_type = 'meal'
+    st.markdown("---")
 
-with col3:
-    insulin_selected = st.button("胰岛素注射", use_container_width=True, type="primary" if st.session_state.get('input_type') == 'insulin' else "secondary")
-    if insulin_selected:
-        st.session_state.input_type = 'insulin'
-
-# Initialize input type if not set
-if 'input_type' not in st.session_state:
-    st.session_state.input_type = 'glucose'
-
-st.markdown("---")
-
-# Show selected input form
-if st.session_state.input_type == 'glucose':
-    # Blood glucose input - using container instead of expander to prevent closing
-    st.subheader("🩸 记录血糖")
-    with st.container(border=True):
-        # 添加日期选择器
-        col1, col2 = st.columns(2)
+    # Show selected input form
+    if st.session_state.input_type == 'glucose':
+        # Blood glucose input - using container instead of expander to prevent closing
+        st.subheader("🩸 记录血糖")
+        with st.container(border=True):
+            # 添加日期选择器
+            col1, col2 = st.columns(2)
         with col1:
             hk_today = datetime.now(HK_TZ).date()
             record_date = st.date_input(
@@ -623,13 +584,13 @@ if st.session_state.input_type == 'glucose':
             else:
                 st.error("请输入血糖值")
 
-elif st.session_state.input_type == 'meal':
-    # Meal input - using container instead of expander to prevent closing
-    st.subheader("🍽️ 记录饮食")
-    with st.container(border=True):
-        # 添加日期选择器
-        col1, col2 = st.columns(2)
-        with col1:
+    elif st.session_state.input_type == 'meal':
+        # Meal input - using container instead of expander to prevent closing
+        st.subheader("🍽️ 记录饮食")
+        with st.container(border=True):
+            # 添加日期选择器
+            col1, col2 = st.columns(2)
+            with col1:
             hk_today = datetime.now(HK_TZ).date()
             meal_date = st.date_input(
                 "用餐日期 (GMT+8)",
@@ -1064,3 +1025,164 @@ else:
         st.error(f"生成图表时发生错误: {str(e)}")
 
     # Mobile-first design completed - all legacy desktop code removed
+
+# Summary sections with tabbed navigation
+st.markdown("---")
+st.markdown("### 📊 记录摘要")
+
+summary_tab1, summary_tab2, summary_tab3, summary_tab4 = st.tabs(["🩸 血糖记录", "🍽️ 饮食记录", "💉 胰岛素记录", "📋 综合摘要"])
+
+with summary_tab1:
+    st.subheader("血糖记录摘要")
+    if not st.session_state.glucose_data.empty:
+        glucose_data = st.session_state.glucose_data[st.session_state.glucose_data['glucose_level'] > 0].sort_values('timestamp', ascending=False)
+        if not glucose_data.empty:
+            display_glucose = glucose_data.copy()
+            display_glucose['日期'] = display_glucose['timestamp'].dt.strftime('%Y-%m-%d')
+            display_glucose['时间'] = display_glucose['timestamp'].dt.strftime('%H:%M')
+            display_glucose['血糖 (mmol/L)'] = display_glucose['glucose_level'].apply(lambda x: f"{x/18.0182:.1f}")
+            
+            summary_glucose = display_glucose[['日期', '时间', '血糖 (mmol/L)']].head(20)
+            st.dataframe(summary_glucose, use_container_width=True, height=400)
+            
+            # Statistics
+            avg_glucose = display_glucose['glucose_level'].mean() / 18.0182
+            max_glucose = display_glucose['glucose_level'].max() / 18.0182
+            min_glucose = display_glucose['glucose_level'].min() / 18.0182
+            
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("平均血糖", f"{avg_glucose:.1f} mmol/L")
+            with col2:
+                st.metric("最高血糖", f"{max_glucose:.1f} mmol/L")
+            with col3:
+                st.metric("最低血糖", f"{min_glucose:.1f} mmol/L")
+        else:
+            st.info("暂无血糖记录")
+    else:
+        st.info("暂无数据")
+
+with summary_tab2:
+    st.subheader("饮食记录摘要")
+    if not st.session_state.glucose_data.empty:
+        meal_data = st.session_state.glucose_data[
+            (st.session_state.glucose_data['carbs'] > 0) & 
+            (st.session_state.glucose_data['food_details'].str.len() > 0)
+        ].sort_values('timestamp', ascending=False)
+        
+        if not meal_data.empty:
+            display_meals = meal_data.copy()
+            display_meals['日期'] = display_meals['timestamp'].dt.strftime('%Y-%m-%d')
+            display_meals['时间'] = display_meals['timestamp'].dt.strftime('%H:%M')
+            display_meals['碳水 (g)'] = display_meals['carbs'].apply(lambda x: f"{x:.1f}")
+            
+            summary_meals = display_meals[['日期', '时间', 'food_details', '碳水 (g)']].head(20)
+            summary_meals.columns = ['日期', '时间', '食物详情', '碳水 (g)']
+            st.dataframe(summary_meals, use_container_width=True, height=400)
+            
+            # Statistics
+            total_carbs = display_meals['carbs'].sum()
+            avg_carbs = display_meals['carbs'].mean()
+            meal_count = len(display_meals)
+            
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("总碳水摄入", f"{total_carbs:.1f} g")
+            with col2:
+                st.metric("平均每餐", f"{avg_carbs:.1f} g")
+            with col3:
+                st.metric("餐次统计", f"{meal_count} 次")
+        else:
+            st.info("暂无饮食记录")
+    else:
+        st.info("暂无数据")
+
+with summary_tab3:
+    st.subheader("胰岛素记录摘要")
+    if not st.session_state.glucose_data.empty:
+        insulin_data = st.session_state.glucose_data[st.session_state.glucose_data['insulin'] > 0].sort_values('timestamp', ascending=False)
+        
+        if not insulin_data.empty:
+            display_insulin = insulin_data.copy()
+            display_insulin['日期'] = display_insulin['timestamp'].dt.strftime('%Y-%m-%d')
+            display_insulin['时间'] = display_insulin['timestamp'].dt.strftime('%H:%M')
+            display_insulin['剂量 (单位)'] = display_insulin['insulin'].apply(lambda x: f"{x:.1f}")
+            
+            summary_insulin = display_insulin[['日期', '时间', '剂量 (单位)', 'insulin_type', 'injection_site']].head(20)
+            summary_insulin.columns = ['日期', '时间', '剂量 (单位)', '胰岛素类型', '注射部位']
+            st.dataframe(summary_insulin, use_container_width=True, height=400)
+            
+            # Statistics
+            total_insulin = display_insulin['insulin'].sum()
+            avg_insulin = display_insulin['insulin'].mean()
+            injection_count = len(display_insulin)
+            
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("总胰岛素用量", f"{total_insulin:.1f} 单位")
+            with col2:
+                st.metric("平均每次", f"{avg_insulin:.1f} 单位")
+            with col3:
+                st.metric("注射次数", f"{injection_count} 次")
+                
+            # Injection site analysis
+            if 'injection_site' in display_insulin.columns:
+                site_counts = display_insulin['injection_site'].value_counts()
+                if not site_counts.empty:
+                    st.write("注射部位分布:")
+                    st.bar_chart(site_counts)
+        else:
+            st.info("暂无胰岛素记录")
+    else:
+        st.info("暂无数据")
+
+with summary_tab4:
+    st.subheader("每日综合摘要")
+    if not st.session_state.glucose_data.empty:
+        data_dates = pd.to_datetime(st.session_state.glucose_data['timestamp']).dt.date.unique()
+        data_dates = sorted(data_dates, reverse=True)
+        
+        if data_dates:
+            selected_date = st.selectbox(
+                "选择日期查看摘要",
+                options=data_dates,
+                format_func=lambda x: x.strftime('%Y-%m-%d'),
+                key="comprehensive_summary_date"
+            )
+            
+            # Generate and display daily summary
+            daily_summary = generate_daily_summary(selected_date)
+            
+            if daily_summary:
+                st.text_area(
+                    "每日摘要 (可复制)",
+                    value=daily_summary,
+                    height=300,
+                    key="comprehensive_daily_summary"
+                )
+                
+                # Show daily statistics
+                daily_data = st.session_state.glucose_data[
+                    pd.to_datetime(st.session_state.glucose_data['timestamp']).dt.date == selected_date
+                ]
+                
+                if not daily_data.empty:
+                    st.write("当日统计:")
+                    col1, col2, col3 = st.columns(3)
+                    
+                    glucose_records = daily_data[daily_data['glucose_level'] > 0]
+                    meal_records = daily_data[daily_data['carbs'] > 0]
+                    insulin_records = daily_data[daily_data['insulin'] > 0]
+                    
+                    with col1:
+                        st.metric("血糖记录", f"{len(glucose_records)} 次")
+                    with col2:
+                        st.metric("饮食记录", f"{len(meal_records)} 次")
+                    with col3:
+                        st.metric("胰岛素注射", f"{len(insulin_records)} 次")
+            else:
+                st.info("选择的日期没有记录")
+        else:
+            st.info("暂无数据可显示摘要")
+    else:
+        st.info("暂无数据可显示摘要")
