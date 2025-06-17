@@ -57,6 +57,46 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# Helper function for time input parsing
+def parse_time_input(time_input, default_time=None):
+    """Parse time input from various formats including 4-digit format"""
+    if not time_input:
+        return default_time or datetime.now(HK_TZ).time()
+    
+    # Remove any spaces and colons
+    time_str = str(time_input).replace(" ", "").replace(":", "")
+    
+    try:
+        # Handle 4-digit format (e.g., 1430 -> 14:30)
+        if len(time_str) == 4 and time_str.isdigit():
+            hour = int(time_str[:2])
+            minute = int(time_str[2:])
+            if 0 <= hour <= 23 and 0 <= minute <= 59:
+                return datetime.strptime(f"{hour:02d}:{minute:02d}", "%H:%M").time()
+        
+        # Handle 3-digit format (e.g., 930 -> 09:30)
+        elif len(time_str) == 3 and time_str.isdigit():
+            hour = int(time_str[0])
+            minute = int(time_str[1:])
+            if 0 <= hour <= 23 and 0 <= minute <= 59:
+                return datetime.strptime(f"{hour:02d}:{minute:02d}", "%H:%M").time()
+        
+        # Handle 1-2 digit format (e.g., 9 -> 09:00, 14 -> 14:00)
+        elif len(time_str) in [1, 2] and time_str.isdigit():
+            hour = int(time_str)
+            if 0 <= hour <= 23:
+                return datetime.strptime(f"{hour:02d}:00", "%H:%M").time()
+        
+        # Handle standard HH:MM format
+        elif ":" in time_str:
+            return datetime.strptime(time_str, "%H:%M").time()
+            
+    except ValueError:
+        pass
+    
+    # If parsing fails, return default time
+    return default_time or datetime.now(HK_TZ).time()
+
 # Functions for persistent data storage
 def load_persistent_data():
     """Load data with robust recovery mechanisms and data integrity checks"""
@@ -382,16 +422,23 @@ with st.sidebar:
                 # 初始化血糖记录时间状态 (HK时区)
                 if 'glucose_time_state' not in st.session_state:
                     hk_now = datetime.now(HK_TZ)
-                    st.session_state.glucose_time_state = hk_now.time()
+                    st.session_state.glucose_time_state = hk_now.strftime("%H:%M")
                 
-                record_time = st.time_input(
+                time_input_str = st.text_input(
                     "记录时间 (GMT+8)",
                     value=st.session_state.glucose_time_state,
-                    key="glucose_time"
+                    placeholder="例如: 1430 或 14:30",
+                    help="支持格式: 1430, 14:30, 930, 9:30",
+                    key="glucose_time_input"
                 )
                 
-                # 更新状态但不重置
-                st.session_state.glucose_time_state = record_time
+                # Parse the time input and update state
+                record_time = parse_time_input(time_input_str)
+                st.session_state.glucose_time_state = record_time.strftime("%H:%M")
+                
+                # Display parsed time for confirmation
+                if time_input_str:
+                    st.caption(f"解析时间: {record_time.strftime('%H:%M')}")
 
             glucose_mmol = st.number_input("血糖水平 (mmol/L)", min_value=2.0, max_value=22.0, value=None, step=0.1, key="glucose_level", placeholder="请输入血糖值")
 
@@ -440,16 +487,23 @@ with st.sidebar:
                 # 初始化用餐时间状态 (HK时区)
                 if 'meal_time_state' not in st.session_state:
                     hk_now = datetime.now(HK_TZ)
-                    st.session_state.meal_time_state = hk_now.time()
+                    st.session_state.meal_time_state = hk_now.strftime("%H:%M")
                 
-                meal_time = st.time_input(
+                meal_time_input_str = st.text_input(
                     "用餐时间 (GMT+8)",
                     value=st.session_state.meal_time_state,
+                    placeholder="例如: 1230 或 12:30",
+                    help="支持格式: 1230, 12:30, 730, 7:30",
                     key="meal_time_input"
                 )
                 
-                # 更新状态但不重置
-                st.session_state.meal_time_state = meal_time
+                # Parse the time input and update state
+                meal_time = parse_time_input(meal_time_input_str)
+                st.session_state.meal_time_state = meal_time.strftime("%H:%M")
+                
+                # Display parsed time for confirmation
+                if meal_time_input_str:
+                    st.caption(f"解析时间: {meal_time.strftime('%H:%M')}")
 
             # 初始化食物列表
             if 'meal_foods' not in st.session_state:
@@ -540,16 +594,23 @@ with st.sidebar:
                 # 初始化注射时间状态 (HK时区)
                 if 'injection_time_state' not in st.session_state:
                     hk_now = datetime.now(HK_TZ)
-                    st.session_state.injection_time_state = hk_now.time()
+                    st.session_state.injection_time_state = hk_now.strftime("%H:%M")
                 
-                injection_time = st.time_input(
+                injection_time_input_str = st.text_input(
                     "注射时间 (GMT+8)",
                     value=st.session_state.injection_time_state,
+                    placeholder="例如: 0800 或 08:00",
+                    help="支持格式: 0800, 08:00, 800, 8:00",
                     key="injection_time_input"
                 )
                 
-                # 更新状态但不重置
-                st.session_state.injection_time_state = injection_time
+                # Parse the time input and update state
+                injection_time = parse_time_input(injection_time_input_str)
+                st.session_state.injection_time_state = injection_time.strftime("%H:%M")
+                
+                # Display parsed time for confirmation
+                if injection_time_input_str:
+                    st.caption(f"解析时间: {injection_time.strftime('%H:%M')}")
 
             # 注射部位选择
             injection_site = st.selectbox(
