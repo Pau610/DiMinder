@@ -159,12 +159,12 @@ def save_persistent_data():
                 # Create additional safety backup
                 shutil.copy('user_data.csv', 'user_data_safe.csv')
                 
-                # Clean up old timestamped backups (keep only last 10)
+                # Clean up old timestamped backups (keep only last 3)
                 import glob
                 backup_files = glob.glob('user_data_backup_*.csv')
-                if len(backup_files) > 10:
+                if len(backup_files) > 3:
                     backup_files.sort()
-                    for old_backup in backup_files[:-10]:
+                    for old_backup in backup_files[:-3]:
                         try:
                             os.remove(old_backup)
                         except:
