@@ -935,8 +935,8 @@ else:
                 # Glucose statistics
                 col1, col2, col3, col4 = st.columns(4)
                 with col1:
-                    avg_glucose = glucose_data['glucose_level'].mean()
-                    st.metric("平均血糖", f"{avg_glucose:.1f} mg/dL")
+                    avg_glucose_mmol = glucose_data['glucose_level'].mean() / 18.0182
+                    st.metric("平均血糖", f"{avg_glucose_mmol:.1f} mmol/L")
                 with col2:
                     low_count = len(glucose_data[glucose_data['glucose_level'] < 70])
                     st.metric("低血糖次数", f"{low_count}次")
