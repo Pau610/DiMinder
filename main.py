@@ -1252,7 +1252,7 @@ else:
                 display_all = all_data.copy()
                 display_all['日期'] = display_all['timestamp'].dt.strftime('%Y-%m-%d')
                 display_all['时间'] = display_all['timestamp'].dt.strftime('%H:%M')
-                display_all['血糖 (mg/dL)'] = display_all['glucose_level'].apply(lambda x: f"{x:.1f}" if x > 0 else "-")
+                display_all['血糖 (mmol/L)'] = display_all['glucose_level'].apply(lambda x: f"{x/18.0182:.1f}" if x > 0 else "-")
                 display_all['胰岛素 (单位)'] = display_all['insulin'].apply(lambda x: f"{x:.1f}" if x > 0 else "-")
                 display_all['碳水 (g)'] = display_all['carbs'].apply(lambda x: f"{x:.1f}" if x > 0 else "-")
                 display_all['记录类型'] = display_all.apply(lambda row: 
@@ -1260,7 +1260,7 @@ else:
                     ('胰岛素' if row['insulin'] > 0 else 
                      ('饮食' if row['carbs'] > 0 else '其他')), axis=1)
                 
-                summary_all = display_all[['日期', '时间', '记录类型', '血糖 (mg/dL)', '胰岛素 (单位)', '碳水 (g)']].head(50)
+                summary_all = display_all[['日期', '时间', '记录类型', '血糖 (mmol/L)', '胰岛素 (单位)', '碳水 (g)']].head(50)
                 st.dataframe(summary_all, use_container_width=True, height=500)
                 
                 # Overall statistics
