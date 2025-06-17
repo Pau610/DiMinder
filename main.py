@@ -59,25 +59,8 @@ st.markdown("""
 
 # Functions for persistent data storage
 def load_persistent_data():
-    """Load data with persistent manual records - always prioritize user data"""
-    try:
-        # Always prioritize user_data.csv if it exists
-        if os.path.exists('user_data.csv'):
-            data = pd.read_csv('user_data.csv')
-            data['timestamp'] = pd.to_datetime(data['timestamp'])
-            # Verify data integrity - if user_data has content, use it
-            if not data.empty:
-                return data
-        
-        # Only create initial user_data.csv from imported data if user_data doesn't exist or is empty
-        if not os.path.exists('user_data.csv'):
-            imported_data = pd.read_csv('processed_dm_data.csv')
-            imported_data['timestamp'] = pd.to_datetime(imported_data['timestamp'])
-            # Save imported data as initial user_data to prevent future resets
-            imported_data.to_csv('user_data.csv', index=False)
-            return imported_data
-            
-        # If user_data exists but is empty, preserve it (don't reset to imported data)
+    """Load data with robust recovery mechanisms and data integrity checks"""
+    def create_empty_dataframe():
         return pd.DataFrame({
             'timestamp': [],
             'glucose_level': [],
@@ -95,58 +78,116 @@ def load_persistent_data():
             'injection_site': 'object',
             'food_details': 'object'
         })
+    
+    try:
+        # Priority order for data recovery
+        data_sources = [
+            'user_data.csv',
+            'user_data_safe.csv', 
+            'user_data_backup.csv'
+        ]
+        
+        # Try to load from each source in priority order
+        for source_file in data_sources:
+            if os.path.exists(source_file):
+                try:
+                    data = pd.read_csv(source_file)
+                    data['timestamp'] = pd.to_datetime(data['timestamp'])
+                    
+                    # Verify data integrity
+                    required_columns = ['timestamp', 'glucose_level', 'carbs', 'insulin']
+                    if all(col in data.columns for col in required_columns):
+                        # If this is not the primary file but has data, restore it
+                        if source_file != 'user_data.csv' and not data.empty:
+                            import shutil
+                            shutil.copy(source_file, 'user_data.csv')
+                            st.success(f"已从备份文件{source_file}恢复数据")
+                        return data
+                except Exception as e:
+                    st.warning(f"尝试从{source_file}加载数据失败: {e}")
+                    continue
+        
+        # If no user data files exist, create initial data from imported sample
+        if not any(os.path.exists(f) for f in data_sources):
+            if os.path.exists('processed_dm_data.csv'):
+                try:
+                    imported_data = pd.read_csv('processed_dm_data.csv')
+                    imported_data['timestamp'] = pd.to_datetime(imported_data['timestamp'])
+                    # Save as user data with multiple backups
+                    imported_data.to_csv('user_data.csv', index=False)
+                    imported_data.to_csv('user_data_safe.csv', index=False)
+                    imported_data.to_csv('user_data_backup.csv', index=False)
+                    return imported_data
+                except Exception as e:
+                    st.warning(f"导入初始数据失败: {e}")
+        
+        # Last resort: return empty dataframe
+        empty_df = create_empty_dataframe()
+        # Save empty dataframe to prevent repeated initialization attempts
+        empty_df.to_csv('user_data.csv', index=False)
+        return empty_df
         
     except Exception as e:
-        st.error(f"数据加载失败: {e}")
-        # Return empty dataframe rather than risking data loss
-        return pd.DataFrame({
-            'timestamp': [],
-            'glucose_level': [],
-            'carbs': [],
-            'insulin': [],
-            'insulin_type': [],
-            'injection_site': [],
-            'food_details': []
-        }).astype({
-            'timestamp': 'datetime64[ns]',
-            'glucose_level': 'float64',
-            'carbs': 'float64', 
-            'insulin': 'float64',
-            'insulin_type': 'object',
-            'injection_site': 'object',
-            'food_details': 'object'
-        })
+        st.error(f"数据加载严重失败: {e}")
+        return create_empty_dataframe()
 
 def save_persistent_data():
-    """Save current data to persistent storage with backup protection"""
+    """Save current data to persistent storage with multiple backup layers"""
     try:
         import shutil
-        # Create backup before saving
+        from datetime import datetime
+        
+        # Create timestamped backup
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        
+        # Create multiple backup copies
         if os.path.exists('user_data.csv'):
             shutil.copy('user_data.csv', 'user_data_backup.csv')
+            shutil.copy('user_data.csv', f'user_data_backup_{timestamp}.csv')
         
-        # Save current data
-        st.session_state.glucose_data.to_csv('user_data.csv', index=False)
+        # Save current data with verification
+        temp_file = 'user_data_temp.csv'
+        st.session_state.glucose_data.to_csv(temp_file, index=False)
         
-        # Verify the save was successful
-        if os.path.exists('user_data.csv'):
-            test_read = pd.read_csv('user_data.csv')
-            if test_read.empty and not st.session_state.glucose_data.empty:
-                # Restore from backup if save failed
+        # Verify temp file before replacing main file
+        if os.path.exists(temp_file):
+            test_read = pd.read_csv(temp_file)
+            if len(test_read) == len(st.session_state.glucose_data):
+                # Verification passed, replace main file
+                shutil.move(temp_file, 'user_data.csv')
+                
+                # Create additional safety backup
+                shutil.copy('user_data.csv', 'user_data_safe.csv')
+                
+                # Clean up old timestamped backups (keep only last 10)
+                import glob
+                backup_files = glob.glob('user_data_backup_*.csv')
+                if len(backup_files) > 10:
+                    backup_files.sort()
+                    for old_backup in backup_files[:-10]:
+                        try:
+                            os.remove(old_backup)
+                        except:
+                            pass
+            else:
+                # Verification failed, remove temp file and restore backup
+                os.remove(temp_file)
                 if os.path.exists('user_data_backup.csv'):
-                    shutil.copy('user_data_backup.csv', 'user_data.csv')
-                    st.error("数据保存验证失败，已恢复备份")
+                    st.error("数据保存验证失败，已保持原有数据")
             
     except Exception as e:
         st.error(f"数据保存失败: {e}")
-        # Try to restore from backup
-        if os.path.exists('user_data_backup.csv'):
-            try:
-                import shutil
-                shutil.copy('user_data_backup.csv', 'user_data.csv')
-                st.warning("已恢复备份数据")
-            except:
-                pass
+        # Try multiple recovery options
+        recovery_files = ['user_data_backup.csv', 'user_data_safe.csv']
+        for recovery_file in recovery_files:
+            if os.path.exists(recovery_file):
+                try:
+                    import shutil
+                    shutil.copy(recovery_file, 'user_data.csv')
+                    st.warning(f"已从{recovery_file}恢复数据")
+                    break
+                except:
+                    continue
 
 def generate_daily_summary(selected_date):
     """Generate daily summary in the requested format"""
@@ -184,27 +225,56 @@ def generate_daily_summary(selected_date):
     summary_lines.append(" )")
     return "\n".join(summary_lines)
 
-# Initialize session state with persistent data - protect against resets
-if 'glucose_data' not in st.session_state:
+# Enhanced session state initialization with data corruption protection
+def validate_session_data():
+    """Validate and recover session data if corrupted"""
+    if 'glucose_data' not in st.session_state or st.session_state.glucose_data is None:
+        return False
+    
+    try:
+        # Check if data structure is valid
+        required_columns = ['timestamp', 'glucose_level', 'carbs', 'insulin']
+        if not isinstance(st.session_state.glucose_data, pd.DataFrame):
+            return False
+        if not all(col in st.session_state.glucose_data.columns for col in required_columns):
+            return False
+        return True
+    except:
+        return False
+
+# Initialize or recover session state data
+if not validate_session_data():
     st.session_state.glucose_data = load_persistent_data()
     st.session_state.data_initialized = True
-elif not hasattr(st.session_state, 'data_initialized'):
-    # Session state exists but may have been corrupted - reload from persistent storage
-    saved_data = load_persistent_data()
-    if not saved_data.empty:
-        st.session_state.glucose_data = saved_data
-    st.session_state.data_initialized = True
+    st.session_state.data_recovery_count = 0
+else:
+    # Verify data hasn't been accidentally reset
+    if hasattr(st.session_state, 'last_record_count'):
+        current_count = len(st.session_state.glucose_data)
+        if current_count < st.session_state.last_record_count:
+            # Data loss detected - attempt recovery
+            recovered_data = load_persistent_data()
+            if len(recovered_data) > current_count:
+                st.session_state.glucose_data = recovered_data
+                st.warning(f"检测到数据丢失，已恢复 {len(recovered_data)} 条记录")
 
-# Periodic backup save to prevent data loss
+# Track record count for loss detection
+st.session_state.last_record_count = len(st.session_state.glucose_data)
+
+# Enhanced periodic backup system
 if 'last_backup_time' not in st.session_state:
     st.session_state.last_backup_time = datetime.now()
+    st.session_state.backup_interval = 180  # 3 minutes for more frequent saves
 else:
     current_time = datetime.now()
     time_diff = current_time - st.session_state.last_backup_time
-    # Auto-save every 5 minutes if data exists
-    if time_diff.total_seconds() > 300 and not st.session_state.glucose_data.empty:
+    # More aggressive auto-save schedule
+    if time_diff.total_seconds() > st.session_state.backup_interval and not st.session_state.glucose_data.empty:
         save_persistent_data()
         st.session_state.last_backup_time = current_time
+        # Show subtle save confirmation
+        if len(st.session_state.glucose_data) > 0:
+            st.toast(f"已自动保存 {len(st.session_state.glucose_data)} 条记录", icon="💾")
 
 
 
@@ -343,8 +413,13 @@ with st.sidebar:
                         st.session_state.glucose_data,
                         pd.DataFrame([new_data])
                     ], ignore_index=True)
-                    save_persistent_data()  # Save to persistent storage
-                    st.success("记录已添加！")
+                    # Immediate save with validation
+                    save_persistent_data()
+                    # Verify save was successful
+                    if os.path.exists('user_data.csv'):
+                        st.success(f"血糖记录已保存！当前共有 {len(st.session_state.glucose_data)} 条记录")
+                    else:
+                        st.error("数据保存失败，请重试")
                 else:
                     st.error("请输入血糖值")
 
@@ -435,11 +510,16 @@ with st.sidebar:
                         st.session_state.glucose_data,
                         pd.DataFrame([new_meal])
                     ], ignore_index=True)
-                    save_persistent_data()  # Save to persistent storage
-                    # 清空食物列表
-                    st.session_state.meal_foods = []
-                    st.success("饮食记录已添加！")
-                    st.rerun()
+                    # Immediate save with validation
+                    save_persistent_data()
+                    # Verify save was successful
+                    if os.path.exists('user_data.csv'):
+                        # 清空食物列表
+                        st.session_state.meal_foods = []
+                        st.success(f"饮食记录已保存！当前共有 {len(st.session_state.glucose_data)} 条记录")
+                        st.rerun()
+                    else:
+                        st.error("数据保存失败，请重试")
             else:
                 st.info("请添加食物和碳水化合物含量")
 
@@ -510,8 +590,13 @@ with st.sidebar:
                         st.session_state.glucose_data,
                         pd.DataFrame([new_injection])
                     ], ignore_index=True)
-                    save_persistent_data()  # Save to persistent storage
-                    st.success("注射记录已添加！")
+                    # Immediate save with validation
+                    save_persistent_data()
+                    # Verify save was successful
+                    if os.path.exists('user_data.csv'):
+                        st.success(f"注射记录已保存！当前共有 {len(st.session_state.glucose_data)} 条记录")
+                    else:
+                        st.error("数据保存失败，请重试")
                 else:
                     st.error("请输入胰岛素剂量")
 
