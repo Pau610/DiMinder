@@ -832,38 +832,36 @@ else:
         with col1:
             latest_mmol = round(recent_data['glucose_level'].iloc[-1] / 18.0182, 1)
             st.metric("最新血糖", f"{latest_mmol} mmol/L")
-            with col2:
-                avg_mmol = round(recent_data['glucose_level'].mean() / 18.0182, 1)
-                st.metric("平均值 (最近5次)", f"{avg_mmol} mmol/L")
+        with col2:
+            avg_mmol = round(recent_data['glucose_level'].mean() / 18.0182, 1)
+            st.metric("平均值 (最近5次)", f"{avg_mmol} mmol/L")
 
-            # 血糖预警检查
-            recent_glucose = recent_data['glucose_level'].iloc[-1]
-            if recent_glucose <= 40:
-                st.error("⚠️ 危险！当前血糖值过低，请立即处理！")
-            elif recent_glucose < 70:
-                st.warning("⚠️ 注意！当前血糖值偏低，请及时补充糖分。")
+        # 血糖预警检查
+        recent_glucose = recent_data['glucose_level'].iloc[-1]
+        if recent_glucose <= 40:
+            st.error("⚠️ 危险！当前血糖值过低，请立即处理！")
+        elif recent_glucose < 70:
+            st.warning("⚠️ 注意！当前血糖值偏低，请及时补充糖分。")
 
+        # Predictions
+        st.subheader("🔮 血糖预测")
+        if len(data_filtered) >= 3:
+            predictions = st.session_state.predictor.predict(data_filtered)
+            fig_pred = create_prediction_plot(data_filtered, predictions)
+            st.plotly_chart(fig_pred, use_container_width=True, height=350)
+        else:
+            st.info("需要至少3个血糖记录来进行预测")
 
-            # Predictions
-            st.subheader("血糖预测")
-            if len(data_filtered) >= 3:
-                predictions = st.session_state.predictor.predict(data_filtered)
-                fig_pred = create_prediction_plot(data_filtered, predictions)
-                st.plotly_chart(fig_pred, use_container_width=True, height=350)
-            else:
-                st.info("需要至少3个血糖记录来进行预测")
-
-
-            # Real-time predictions
-            st.subheader("实时血糖预测")
-            if len(data_filtered) >= 12:
-                real_time_predictions = st.session_state.predictor.predict_real_time(data_filtered)
-                if len(real_time_predictions) > 0:
-                    pred_times = [datetime.now() + timedelta(minutes=5*i) for i in range(6)]
-                    real_time_df = pd.DataFrame({
-                        'timestamp': pred_times,
-                        'glucose_level': real_time_predictions
-                    })
+        # Real-time predictions
+        st.subheader("⏱️ 实时血糖预测")
+        if len(data_filtered) >= 12:
+            real_time_predictions = st.session_state.predictor.predict_real_time(data_filtered)
+            if len(real_time_predictions) > 0:
+                pred_times = [datetime.now() + timedelta(minutes=5*i) for i in range(6)]
+                real_time_df = pd.DataFrame({
+                    'timestamp': pred_times,
+                    'glucose_level': real_time_predictions
+                })
                     lower_bound, upper_bound = st.session_state.predictor.get_prediction_intervals(real_time_predictions)
 
                     fig_real_time = go.Figure()
@@ -951,10 +949,11 @@ else:
             else:
                 st.info("暂无注射部位数据")
 
-        except Exception as e:
-            st.error(f"生成图表时发生错误: {str(e)}")
+    except Exception as e:
+        st.error(f"生成图表时发生错误: {str(e)}")
 
-    else:
+    # Remove desktop layout since we're using mobile-first design
+    # else:
         # 桌面端双列布局
         col1, col2 = st.columns([2, 1])
 
