@@ -952,69 +952,21 @@ else:
     except Exception as e:
         st.error(f"生成图表时发生错误: {str(e)}")
 
-    # Remove desktop layout since we're using mobile-first design
-    # else:
-        # 桌面端双列布局
-        col1, col2 = st.columns([2, 1])
+    # Mobile-first design completed - all legacy desktop code removed
 
-        with col1:
-            st.subheader("血糖趋势")
-            try:
-                # Date range selector
-                st.write("选择日期范围：")
-                col_start, col_end = st.columns(2)
-                with col_start:
-                    start_date = st.date_input(
-                        "开始日期",
-                        datetime.now() - timedelta(days=7)
-                    )
-                with col_end:
-                    end_date = st.date_input(
-                        "结束日期",
-                        datetime.now()
-                    )
-
-                # Convert dates to datetime
-                start_datetime = datetime.combine(start_date, datetime.min.time())
-                end_datetime = datetime.combine(end_date, datetime.max.time())
-
-                # Sort and filter data
-                data_sorted = st.session_state.glucose_data.sort_values('timestamp')
-                data_filtered = data_sorted[
-                    (data_sorted['timestamp'] >= start_datetime) &
-                    (data_sorted['timestamp'] <= end_datetime)
-                ]
-
-                # Create interactive plot with date range
-                fig = create_glucose_plot(data_filtered, (start_datetime, end_datetime))
-                st.plotly_chart(fig, use_container_width=True, height=450)
-
-                # Predictions
-                st.subheader("血糖预测")
-                if len(data_filtered) >= 3:
-                    predictions = st.session_state.predictor.predict(data_filtered)
-                    fig_pred = create_prediction_plot(data_filtered, predictions)
-                    st.plotly_chart(fig_pred, use_container_width=True, height=450)
-                else:
-                    st.info("需要至少3个血糖记录来进行预测")
-
-                # Real-time predictions
-                st.subheader("实时血糖预测")
-                if len(data_filtered) >= 12:
-                    real_time_predictions = st.session_state.predictor.predict_real_time(data_filtered)
-                    if len(real_time_predictions) > 0:
-                        pred_times = [datetime.now() + timedelta(minutes=5*i) for i in range(6)]
-                        real_time_df = pd.DataFrame({
-                            'timestamp': pred_times,
-                            'glucose_level': real_time_predictions
-                        })
-                        lower_bound, upper_bound = st.session_state.predictor.get_prediction_intervals(real_time_predictions)
-
-                        fig_real_time = go.Figure()
-
-                        # Convert to mmol/L for display
-                        real_time_predictions_mmol = [p / 18.0182 for p in real_time_predictions]
-                        upper_bound_mmol = [p / 18.0182 for p in upper_bound]
+# Add daily summary generation function
+def generate_daily_summary(selected_date):
+    """Generate daily summary in the requested format"""
+    try:
+        if st.session_state.glucose_data.empty:
+            return "今日暂无记录"
+        
+        # Convert selected_date to datetime for comparison
+        start_of_day = datetime.combine(selected_date, datetime.min.time())
+        end_of_day = datetime.combine(selected_date, datetime.max.time())
+        
+        # Filter data for the selected date
+        data_sorted = st.session_state.glucose_data.sort_values('timestamp')
                         lower_bound_mmol = [p / 18.0182 for p in lower_bound]
 
                         # Add prediction intervals
