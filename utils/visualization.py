@@ -5,10 +5,7 @@ def create_glucose_plot(data, date_range=None):
     """Create an interactive plotly figure for glucose trends with date range selection"""
     if date_range:
         start_date, end_date = date_range
-        # Convert date objects to datetime for proper comparison
-        start_datetime = datetime.combine(start_date, datetime.min.time())
-        end_datetime = datetime.combine(end_date, datetime.max.time())
-        data = data[(data['timestamp'] >= start_datetime) & (data['timestamp'] <= end_datetime)]
+        data = data[(data['timestamp'] >= start_date) & (data['timestamp'] <= end_date)]
 
     # Convert mg/dL to mmol/L for display
     data_display = data.copy()

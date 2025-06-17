@@ -66,13 +66,7 @@ class GlucosePredictor:
 
         # Prepare recent data for short-term prediction
         recent_data = data.sort_values('timestamp').tail(12)
-        
-        # Filter out rows with glucose_level > 0 to avoid ambiguity
-        glucose_data = recent_data[recent_data['glucose_level'] > 0]
-        if len(glucose_data) < 3:
-            return []
-            
-        X = glucose_data[['glucose_level', 'carbs', 'insulin']].values
+        X = recent_data[['glucose_level', 'carbs', 'insulin']].values
         X = self.scaler.fit_transform(X)
 
         # Train short-term model
