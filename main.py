@@ -19,40 +19,201 @@ st.set_page_config(
     initial_sidebar_state="collapsed"  # 在移动端默认收起侧边栏
 )
 
-# Custom CSS for mobile-friendly design
+# Enhanced mobile-friendly CSS design
 st.markdown("""
 <style>
-    /* 增大按钮尺寸 */
+    /* Mobile-first responsive design */
+    .main .block-container {
+        padding-top: 1rem;
+        padding-left: 1rem;
+        padding-right: 1rem;
+        max-width: 100%;
+    }
+    
+    /* Enhanced button styling for mobile */
     .stButton > button {
         width: 100%;
-        padding: 0.75rem 1.5rem;
-        font-size: 1.1rem;
+        padding: 1rem 1.5rem;
+        font-size: 1.2rem;
+        font-weight: 600;
+        border-radius: 8px;
+        min-height: 3rem;
+        background: linear-gradient(90deg, #4CAF50 0%, #45a049 100%);
+        border: none;
+        color: white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: all 0.2s ease;
+    }
+    
+    .stButton > button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    /* Primary button styling */
+    .stButton > button[kind="primary"] {
+        background: linear-gradient(90deg, #2196F3 0%, #1976D2 100%);
+    }
+    
+    /* Secondary button styling */
+    .stButton > button[kind="secondary"] {
+        background: linear-gradient(90deg, #9E9E9E 0%, #757575 100%);
     }
 
-    /* 优化输入框样式 */
+    /* Enhanced input field styling */
     .stNumberInput input,
     .stTextInput input,
-    .stDateInput input {
-        font-size: 1.1rem;
-        padding: 0.5rem;
+    .stDateInput input,
+    .stTimeInput input {
+        font-size: 1.2rem;
+        padding: 0.75rem;
+        border-radius: 8px;
+        border: 2px solid #E0E0E0;
+        min-height: 3rem;
+        box-sizing: border-box;
+    }
+    
+    .stNumberInput input:focus,
+    .stTextInput input:focus,
+    .stDateInput input:focus,
+    .stTimeInput input:focus {
+        border-color: #2196F3;
+        box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
     }
 
-    /* 优化选择框样式 */
+    /* Enhanced selectbox styling */
     .stSelectbox select {
-        font-size: 1.1rem;
-        padding: 0.5rem;
+        font-size: 1.2rem;
+        padding: 0.75rem;
+        border-radius: 8px;
+        min-height: 3rem;
+        border: 2px solid #E0E0E0;
     }
 
-    /* 响应式布局调整 */
+    /* Text area improvements */
+    .stTextArea textarea {
+        font-size: 1.1rem;
+        padding: 0.75rem;
+        border-radius: 8px;
+        border: 2px solid #E0E0E0;
+        min-height: 150px;
+    }
+
+    /* Mobile-specific improvements */
     @media (max-width: 768px) {
+        /* Reduce margins and padding for mobile */
         .element-container {
+            margin: 0.75rem 0;
+        }
+        
+        /* Larger touch targets */
+        .stButton > button {
+            min-height: 3.5rem;
+            font-size: 1.3rem;
+        }
+        
+        /* Better input field sizing */
+        .stNumberInput input,
+        .stTextInput input,
+        .stDateInput input,
+        .stTimeInput input,
+        .stSelectbox select {
+            min-height: 3.5rem;
+            font-size: 1.3rem;
+        }
+
+        /* Optimize charts for mobile */
+        .plotly-graph-div {
+            height: 350px !important;
+        }
+        
+        /* Better column spacing */
+        .row-widget.stHorizontal > div {
+            padding: 0 0.25rem;
+        }
+        
+        /* Improve metric display */
+        div[data-testid="metric-container"] {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            padding: 1rem;
+            border-radius: 8px;
             margin: 0.5rem 0;
         }
-
-        /* 调整图表容器 */
-        .plotly-graph-div {
-            height: 300px !important;
+        
+        /* Better tabs for mobile */
+        .stTabs [data-baseweb="tab-list"] {
+            gap: 0.5rem;
         }
+        
+        .stTabs [data-baseweb="tab"] {
+            padding: 0.75rem 1rem;
+            font-size: 1.1rem;
+            min-height: 3rem;
+        }
+        
+        /* Improve expander styling */
+        .streamlit-expanderHeader {
+            font-size: 1.2rem;
+            font-weight: 600;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        /* Better dataframe display */
+        .dataframe {
+            font-size: 0.9rem;
+        }
+        
+        /* Improve sidebar for mobile */
+        .css-1d391kg {
+            padding-top: 1rem;
+        }
+    }
+    
+    /* Extra small devices */
+    @media (max-width: 480px) {
+        .main .block-container {
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
+        }
+        
+        .stButton > button {
+            font-size: 1.1rem;
+            padding: 0.875rem 1rem;
+        }
+        
+        /* Stack columns on very small screens */
+        .row-widget.stHorizontal {
+            flex-direction: column;
+        }
+        
+        .row-widget.stHorizontal > div {
+            width: 100% !important;
+            margin-bottom: 0.5rem;
+        }
+    }
+    
+    /* Toast notifications styling */
+    .stToast {
+        font-size: 1.1rem;
+        padding: 1rem;
+        border-radius: 8px;
+    }
+    
+    /* Loading spinner improvements */
+    .stSpinner {
+        text-align: center;
+        padding: 2rem;
+    }
+    
+    /* Better alert styling */
+    .stAlert {
+        padding: 1rem;
+        border-radius: 8px;
+        margin: 1rem 0;
+        font-size: 1.1rem;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -616,52 +777,61 @@ if not st.session_state.glucose_data.empty:
 if st.session_state.glucose_data.empty:
     st.info("还没有任何记录，请先添加数据。")
 else:
-    # 根据屏幕宽度决定使用单列或双列布局
-    screen_width = st.empty()
-    is_mobile = screen_width.checkbox("Mobile View", value=False, key="mobile_view")
-    screen_width.empty()  # 清除checkbox
+    # Responsive layout that automatically adapts
+    # Use JavaScript to detect screen size and set responsive layout
+    st.markdown("""
+    <script>
+    function setMobileView() {
+        const isMobile = window.innerWidth <= 768;
+        const sessionState = window.parent.document.querySelector('[data-testid="stSidebar"]');
+        if (sessionState) {
+            sessionState.style.display = isMobile ? 'none' : 'block';
+        }
+    }
+    window.addEventListener('resize', setMobileView);
+    setMobileView();
+    </script>
+    """, unsafe_allow_html=True)
 
-    if is_mobile:
-        # 移动端单列布局
-        # 血糖趋势
-        st.subheader("血糖趋势")
-        try:
-            # Date range selector with responsive layout
-            st.write("选择日期范围：")
-            col_start, col_end = st.columns(2)
-            with col_start:
-                start_date = st.date_input(
-                    "开始日期",
-                    datetime.now() - timedelta(days=7)
-                )
-            with col_end:
-                end_date = st.date_input(
-                    "结束日期",
-                    datetime.now()
-                )
+    # Mobile-optimized single column layout
+    st.subheader("📊 血糖趋势")
+    try:
+        # Date range selector with responsive layout
+        st.write("选择日期范围：")
+        col_start, col_end = st.columns(2)
+        with col_start:
+            start_date = st.date_input(
+                "开始日期",
+                datetime.now() - timedelta(days=7)
+            )
+        with col_end:
+            end_date = st.date_input(
+                "结束日期",
+                datetime.now()
+            )
 
-            # Convert dates to datetime
-            start_datetime = datetime.combine(start_date, datetime.min.time())
-            end_datetime = datetime.combine(end_date, datetime.max.time())
+        # Convert dates to datetime
+        start_datetime = datetime.combine(start_date, datetime.min.time())
+        end_datetime = datetime.combine(end_date, datetime.max.time())
 
-            # Sort and filter data
-            data_sorted = st.session_state.glucose_data.sort_values('timestamp')
-            data_filtered = data_sorted[
-                (data_sorted['timestamp'] >= start_datetime) &
-                (data_sorted['timestamp'] <= end_datetime)
-            ]
+        # Sort and filter data
+        data_sorted = st.session_state.glucose_data.sort_values('timestamp')
+        data_filtered = data_sorted[
+            (data_sorted['timestamp'] >= start_datetime) &
+            (data_sorted['timestamp'] <= end_datetime)
+        ]
 
-            # Create interactive plot with date range
-            fig = create_glucose_plot(data_filtered, (start_datetime, end_datetime))
-            st.plotly_chart(fig, use_container_width=True, height=350)
+        # Create interactive plot with date range
+        fig = create_glucose_plot(data_filtered, (start_datetime, end_datetime))
+        st.plotly_chart(fig, use_container_width=True, height=350)
 
-            # Recent statistics
-            st.subheader("最近统计")
-            recent_data = data_sorted.tail(5)
-            col1, col2 = st.columns(2)
-            with col1:
-                latest_mmol = round(recent_data['glucose_level'].iloc[-1] / 18.0182, 1)
-                st.metric("最新血糖", f"{latest_mmol} mmol/L")
+        # Recent statistics
+        st.subheader("📊 最近统计")
+        recent_data = data_sorted.tail(5)
+        col1, col2 = st.columns(2)
+        with col1:
+            latest_mmol = round(recent_data['glucose_level'].iloc[-1] / 18.0182, 1)
+            st.metric("最新血糖", f"{latest_mmol} mmol/L")
             with col2:
                 avg_mmol = round(recent_data['glucose_level'].mean() / 18.0182, 1)
                 st.metric("平均值 (最近5次)", f"{avg_mmol} mmol/L")
