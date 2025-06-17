@@ -741,31 +741,31 @@ elif st.session_state.input_type == 'insulin':
             key="insulin_dose"
         )
 
-            if st.button("添加注射记录", use_container_width=True):
-                if insulin_dose is not None and insulin_dose > 0:
-                    injection_datetime = datetime.combine(injection_date, injection_time)
-                    new_injection = {
-                        'timestamp': injection_datetime,
-                        'glucose_level': 0,
-                        'carbs': 0,
-                        'insulin': insulin_dose,
-                        'insulin_type': insulin_type,
-                        'injection_site': injection_site,
-                        'food_details': ''
-                    }
-                    st.session_state.glucose_data = pd.concat([
-                        st.session_state.glucose_data,
-                        pd.DataFrame([new_injection])
-                    ], ignore_index=True)
-                    # Immediate save with validation
-                    save_persistent_data()
-                    # Verify save was successful
-                    if os.path.exists('user_data.csv'):
-                        st.success(f"注射记录已保存！当前共有 {len(st.session_state.glucose_data)} 条记录")
-                    else:
-                        st.error("数据保存失败，请重试")
+        if st.button("添加注射记录", use_container_width=True):
+            if insulin_dose is not None and insulin_dose > 0:
+                injection_datetime = datetime.combine(injection_date, injection_time)
+                new_injection = {
+                    'timestamp': injection_datetime,
+                    'glucose_level': 0,
+                    'carbs': 0,
+                    'insulin': insulin_dose,
+                    'insulin_type': insulin_type,
+                    'injection_site': injection_site,
+                    'food_details': ''
+                }
+                st.session_state.glucose_data = pd.concat([
+                    st.session_state.glucose_data,
+                    pd.DataFrame([new_injection])
+                ], ignore_index=True)
+                # Immediate save with validation
+                save_persistent_data()
+                # Verify save was successful
+                if os.path.exists('user_data.csv'):
+                    st.success(f"注射记录已保存！当前共有 {len(st.session_state.glucose_data)} 条记录")
                 else:
-                    st.error("请输入胰岛素剂量")
+                    st.error("数据保存失败，请重试")
+            else:
+                st.error("请输入胰岛素剂量")
 
 # 血糖预警系统 (显著位置)
 if not st.session_state.glucose_data.empty:
