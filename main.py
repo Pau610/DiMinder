@@ -120,9 +120,9 @@ def load_persistent_data():
 def save_persistent_data():
     """Save current data to persistent storage with backup protection"""
     try:
+        import shutil
         # Create backup before saving
         if os.path.exists('user_data.csv'):
-            import shutil
             shutil.copy('user_data.csv', 'user_data_backup.csv')
         
         # Save current data
@@ -486,31 +486,34 @@ with st.sidebar:
             )
             insulin_dose = st.number_input(
                 "胰岛素剂量 (单位)",
-                0.0, 100.0, 0.0,
+                min_value=0.0, 
+                max_value=100.0, 
+                value=None,
                 step=0.5,
+                placeholder="请输入剂量",
                 key="insulin_dose"
             )
 
             if st.button("添加注射记录", use_container_width=True):
-                injection_datetime = datetime.combine(injection_date, injection_time)
-                new_injection = {
-                    'timestamp': injection_datetime,
-                    'glucose_level': 0,
-                    'carbs': 0,
-                    'insulin': insulin_dose,
-                    'insulin_type': insulin_type,
-                    'injection_site': injection_site,
-                    'food_details': ''
-                }
-                st.session_state.glucose_data = pd.concat([
-                    st.session_state.glucose_data,
-                    pd.DataFrame([new_injection])
-                ], ignore_index=True)
-                save_persistent_data()  # Save to persistent storage
-                st.success("注射记录已添加！")
-
-        except Exception as e:
-            st.error(f"添加注射记录时发生错误: {str(e)}")
+                if insulin_dose is not None and insulin_dose > 0:
+                    injection_datetime = datetime.combine(injection_date, injection_time)
+                    new_injection = {
+                        'timestamp': injection_datetime,
+                        'glucose_level': 0,
+                        'carbs': 0,
+                        'insulin': insulin_dose,
+                        'insulin_type': insulin_type,
+                        'injection_site': injection_site,
+                        'food_details': ''
+                    }
+                    st.session_state.glucose_data = pd.concat([
+                        st.session_state.glucose_data,
+                        pd.DataFrame([new_injection])
+                    ], ignore_index=True)
+                    save_persistent_data()  # Save to persistent storage
+                    st.success("注射记录已添加！")
+                else:
+                    st.error("请输入胰岛素剂量")
 
 # 血糖预警系统 (显著位置)
 if not st.session_state.glucose_data.empty:
