@@ -59,21 +59,46 @@ st.markdown("""
 
 # Functions for persistent data storage
 def load_persistent_data():
-    """Load data with persistent manual records"""
+    """Load data with persistent manual records - always prioritize user data"""
     try:
-        # Try to load persistent data first (includes manual records)
+        # Always prioritize user_data.csv if it exists
         if os.path.exists('user_data.csv'):
             data = pd.read_csv('user_data.csv')
             data['timestamp'] = pd.to_datetime(data['timestamp'])
-            return data
-        else:
-            # If no persistent data exists, load imported data
+            # Verify data integrity - if user_data has content, use it
+            if not data.empty:
+                return data
+        
+        # Only create initial user_data.csv from imported data if user_data doesn't exist or is empty
+        if not os.path.exists('user_data.csv'):
             imported_data = pd.read_csv('processed_dm_data.csv')
             imported_data['timestamp'] = pd.to_datetime(imported_data['timestamp'])
+            # Save imported data as initial user_data to prevent future resets
+            imported_data.to_csv('user_data.csv', index=False)
             return imported_data
+            
+        # If user_data exists but is empty, preserve it (don't reset to imported data)
+        return pd.DataFrame({
+            'timestamp': [],
+            'glucose_level': [],
+            'carbs': [],
+            'insulin': [],
+            'insulin_type': [],
+            'injection_site': [],
+            'food_details': []
+        }).astype({
+            'timestamp': 'datetime64[ns]',
+            'glucose_level': 'float64',
+            'carbs': 'float64', 
+            'insulin': 'float64',
+            'insulin_type': 'object',
+            'injection_site': 'object',
+            'food_details': 'object'
+        })
+        
     except Exception as e:
         st.error(f"数据加载失败: {e}")
-        # Fallback to empty data if everything fails
+        # Return empty dataframe rather than risking data loss
         return pd.DataFrame({
             'timestamp': [],
             'glucose_level': [],
@@ -93,11 +118,35 @@ def load_persistent_data():
         })
 
 def save_persistent_data():
-    """Save current data to persistent storage"""
+    """Save current data to persistent storage with backup protection"""
     try:
+        # Create backup before saving
+        if os.path.exists('user_data.csv'):
+            import shutil
+            shutil.copy('user_data.csv', 'user_data_backup.csv')
+        
+        # Save current data
         st.session_state.glucose_data.to_csv('user_data.csv', index=False)
+        
+        # Verify the save was successful
+        if os.path.exists('user_data.csv'):
+            test_read = pd.read_csv('user_data.csv')
+            if test_read.empty and not st.session_state.glucose_data.empty:
+                # Restore from backup if save failed
+                if os.path.exists('user_data_backup.csv'):
+                    shutil.copy('user_data_backup.csv', 'user_data.csv')
+                    st.error("数据保存验证失败，已恢复备份")
+            
     except Exception as e:
         st.error(f"数据保存失败: {e}")
+        # Try to restore from backup
+        if os.path.exists('user_data_backup.csv'):
+            try:
+                import shutil
+                shutil.copy('user_data_backup.csv', 'user_data.csv')
+                st.warning("已恢复备份数据")
+            except:
+                pass
 
 def generate_daily_summary(selected_date):
     """Generate daily summary in the requested format"""
@@ -135,9 +184,27 @@ def generate_daily_summary(selected_date):
     summary_lines.append(" )")
     return "\n".join(summary_lines)
 
-# Initialize session state with persistent data
+# Initialize session state with persistent data - protect against resets
 if 'glucose_data' not in st.session_state:
     st.session_state.glucose_data = load_persistent_data()
+    st.session_state.data_initialized = True
+elif not hasattr(st.session_state, 'data_initialized'):
+    # Session state exists but may have been corrupted - reload from persistent storage
+    saved_data = load_persistent_data()
+    if not saved_data.empty:
+        st.session_state.glucose_data = saved_data
+    st.session_state.data_initialized = True
+
+# Periodic backup save to prevent data loss
+if 'last_backup_time' not in st.session_state:
+    st.session_state.last_backup_time = datetime.now()
+else:
+    current_time = datetime.now()
+    time_diff = current_time - st.session_state.last_backup_time
+    # Auto-save every 5 minutes if data exists
+    if time_diff.total_seconds() > 300 and not st.session_state.glucose_data.empty:
+        save_persistent_data()
+        st.session_state.last_backup_time = current_time
 
 
 
