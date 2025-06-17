@@ -7,16 +7,15 @@ def create_glucose_plot(data, date_range=None):
         start_date, end_date = date_range
         data = data[(data['timestamp'] >= start_date) & (data['timestamp'] <= end_date)]
 
-    # Convert mg/dL to mmol/L for display
+    # Data is already in mmol/L, no conversion needed
     data_display = data.copy()
-    data_display['glucose_mmol'] = data_display['glucose_level'] / 18.0182
 
     fig = go.Figure()
 
     # Add glucose readings in mmol/L
     fig.add_trace(go.Scatter(
         x=data_display['timestamp'],
-        y=data_display['glucose_mmol'],
+        y=data_display['glucose_level'],
         name='血糖值',
         line=dict(color='blue', width=2),
         mode='lines+markers',

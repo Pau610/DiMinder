@@ -4,10 +4,10 @@ from datetime import datetime, timedelta
 
 class DataProcessor:
     def __init__(self):
-        # Default parameters for insulin calculation
+        # Default parameters for insulin calculation (mmol/L units)
         self.carb_ratio = 15  # 1 unit per 15g carbs
-        self.correction_factor = 50  # 1 unit reduces glucose by 50 mg/dL
-        self.target_glucose = 120  # Target blood glucose level
+        self.correction_factor = 2.8  # 1 unit reduces glucose by 2.8 mmol/L (50 mg/dL)
+        self.target_glucose = 6.7  # Target blood glucose level (120 mg/dL = 6.7 mmol/L)
 
     def calculate_insulin_dose(self, current_glucose, carbs):
         """Calculate recommended insulin dose based on current glucose and carbs"""
