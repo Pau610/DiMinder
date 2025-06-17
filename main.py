@@ -251,44 +251,36 @@ st.title("📔 我的日記")
 
 # Daily Summary Section
 st.markdown("### 📋 每日记录摘要")
-col1, col2 = st.columns([3, 1])
 
-with col1:
-    # Date selector for daily summary
-    if not st.session_state.glucose_data.empty:
-        data_dates = pd.to_datetime(st.session_state.glucose_data['timestamp']).dt.date.unique()
-        data_dates = sorted(data_dates, reverse=True)
+# Date selector for daily summary
+if not st.session_state.glucose_data.empty:
+    data_dates = pd.to_datetime(st.session_state.glucose_data['timestamp']).dt.date.unique()
+    data_dates = sorted(data_dates, reverse=True)
+    
+    if data_dates:
+        selected_date = st.selectbox(
+            "选择日期查看摘要",
+            options=data_dates,
+            format_func=lambda x: x.strftime('%Y-%m-%d'),
+            key="summary_date_select"
+        )
         
-        if data_dates:
-            selected_date = st.selectbox(
-                "选择日期查看摘要",
-                options=data_dates,
-                format_func=lambda x: x.strftime('%Y-%m-%d'),
-                key="summary_date_select"
+        # Generate and display daily summary
+        daily_summary = generate_daily_summary(selected_date)
+        
+        if daily_summary:
+            st.text_area(
+                "每日摘要 (可复制)",
+                value=daily_summary,
+                height=200,
+                key="daily_summary_text"
             )
-            
-            # Generate and display daily summary
-            daily_summary = generate_daily_summary(selected_date)
-            
-            if daily_summary:
-                st.text_area(
-                    "每日摘要 (可复制)",
-                    value=daily_summary,
-                    height=200,
-                    key="daily_summary_text"
-                )
-            else:
-                st.info("选择的日期没有记录")
         else:
-            st.info("暂无数据可显示摘要")
+            st.info("选择的日期没有记录")
     else:
         st.info("暂无数据可显示摘要")
-
-with col2:
-    st.markdown("**使用说明:**")
-    st.markdown("- 选择日期查看当日所有记录")
-    st.markdown("- 可直接复制摘要文本")
-    st.markdown("- 格式: 时间 => 记录内容")
+else:
+    st.info("暂无数据可显示摘要")
 
 st.markdown("---")
 
