@@ -362,13 +362,11 @@ with st.sidebar:
     if 'input_type' not in st.session_state:
         st.session_state.input_type = 'glucose'
     
-    # Initialize expander states
-    if 'glucose_expander_open' not in st.session_state:
-        st.session_state.glucose_expander_open = True
-    if 'meal_expander_open' not in st.session_state:
-        st.session_state.meal_expander_open = True
-    if 'insulin_expander_open' not in st.session_state:
-        st.session_state.insulin_expander_open = True
+    # Initialize expander states - always keep the current input type expanded
+    # This ensures the panel stays open when interacting with date pickers
+    st.session_state.glucose_expander_open = (st.session_state.input_type == 'glucose')
+    st.session_state.meal_expander_open = (st.session_state.input_type == 'meal')
+    st.session_state.insulin_expander_open = (st.session_state.input_type == 'insulin')
 
     st.markdown("---")
 
