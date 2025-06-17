@@ -57,6 +57,36 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# Helper function to parse time input
+def parse_time_input(time_str):
+    """Parse time input in various formats and return a time object"""
+    if not time_str:
+        return None
+    
+    # Remove any non-digit characters
+    digits_only = ''.join(filter(str.isdigit, str(time_str)))
+    
+    if len(digits_only) == 4:
+        # Format: HHMM (e.g., "1442" -> "14:42")
+        try:
+            hour = int(digits_only[:2])
+            minute = int(digits_only[2:])
+            if 0 <= hour <= 23 and 0 <= minute <= 59:
+                return datetime.strptime(f"{hour:02d}:{minute:02d}", "%H:%M").time()
+        except ValueError:
+            pass
+    elif len(digits_only) == 3:
+        # Format: HMM (e.g., "942" -> "09:42")
+        try:
+            hour = int(digits_only[0])
+            minute = int(digits_only[1:])
+            if 0 <= hour <= 23 and 0 <= minute <= 59:
+                return datetime.strptime(f"{hour:02d}:{minute:02d}", "%H:%M").time()
+        except ValueError:
+            pass
+    
+    return None
+
 # Functions for persistent data storage
 def load_persistent_data():
     """Load data with robust recovery mechanisms and data integrity checks"""
@@ -305,12 +335,35 @@ if st.session_state.input_type == 'glucose':
                 hk_now = datetime.now(HK_TZ)
                 st.session_state.glucose_time_state = hk_now.time()
             
-            record_time = st.time_input(
-                "记录时间 (GMT+8)",
-                value=st.session_state.glucose_time_state,
-                key="glucose_time"
+            # Quick time input option
+            time_input_method = st.radio(
+                "时间输入方式",
+                ["快速输入 (如: 1442)", "时间选择器"],
+                key="glucose_time_method",
+                horizontal=True
             )
-            st.session_state.glucose_time_state = record_time
+            
+            if time_input_method == "快速输入 (如: 1442)":
+                time_str = st.text_input(
+                    "输入时间 (HHMM格式)",
+                    placeholder="例如: 1442 表示 14:42",
+                    key="glucose_time_text"
+                )
+                if time_str:
+                    parsed_time = parse_time_input(time_str)
+                    if parsed_time:
+                        st.session_state.glucose_time_state = parsed_time
+                        st.success(f"时间设置为: {parsed_time.strftime('%H:%M')}")
+                    else:
+                        st.error("请输入有效的时间格式 (如: 1442)")
+                record_time = st.session_state.glucose_time_state
+            else:
+                record_time = st.time_input(
+                    "记录时间 (GMT+8)",
+                    value=st.session_state.glucose_time_state,
+                    key="glucose_time"
+                )
+                st.session_state.glucose_time_state = record_time
 
         glucose_mmol = st.number_input("血糖水平 (mmol/L)", min_value=2.0, max_value=22.0, value=None, step=0.1, key="glucose_level", placeholder="请输入血糖值")
 
@@ -356,12 +409,35 @@ elif st.session_state.input_type == 'meal':
                 hk_now = datetime.now(HK_TZ)
                 st.session_state.meal_time_state = hk_now.time()
             
-            meal_time = st.time_input(
-                "用餐时间 (GMT+8)",
-                value=st.session_state.meal_time_state,
-                key="meal_time_input"
+            # Quick time input option
+            meal_time_method = st.radio(
+                "时间输入方式",
+                ["快速输入 (如: 1442)", "时间选择器"],
+                key="meal_time_method",
+                horizontal=True
             )
-            st.session_state.meal_time_state = meal_time
+            
+            if meal_time_method == "快速输入 (如: 1442)":
+                meal_time_str = st.text_input(
+                    "输入时间 (HHMM格式)",
+                    placeholder="例如: 1442 表示 14:42",
+                    key="meal_time_text"
+                )
+                if meal_time_str:
+                    parsed_meal_time = parse_time_input(meal_time_str)
+                    if parsed_meal_time:
+                        st.session_state.meal_time_state = parsed_meal_time
+                        st.success(f"时间设置为: {parsed_meal_time.strftime('%H:%M')}")
+                    else:
+                        st.error("请输入有效的时间格式 (如: 1442)")
+                meal_time = st.session_state.meal_time_state
+            else:
+                meal_time = st.time_input(
+                    "用餐时间 (GMT+8)",
+                    value=st.session_state.meal_time_state,
+                    key="meal_time_input"
+                )
+                st.session_state.meal_time_state = meal_time
 
         if 'meal_foods' not in st.session_state:
             st.session_state.meal_foods = []
@@ -445,12 +521,35 @@ elif st.session_state.input_type == 'insulin':
                 hk_now = datetime.now(HK_TZ)
                 st.session_state.injection_time_state = hk_now.time()
             
-            injection_time = st.time_input(
-                "注射时间 (GMT+8)",
-                value=st.session_state.injection_time_state,
-                key="injection_time_input"
+            # Quick time input option
+            injection_time_method = st.radio(
+                "时间输入方式",
+                ["快速输入 (如: 1442)", "时间选择器"],
+                key="injection_time_method",
+                horizontal=True
             )
-            st.session_state.injection_time_state = injection_time
+            
+            if injection_time_method == "快速输入 (如: 1442)":
+                injection_time_str = st.text_input(
+                    "输入时间 (HHMM格式)",
+                    placeholder="例如: 1442 表示 14:42",
+                    key="injection_time_text"
+                )
+                if injection_time_str:
+                    parsed_injection_time = parse_time_input(injection_time_str)
+                    if parsed_injection_time:
+                        st.session_state.injection_time_state = parsed_injection_time
+                        st.success(f"时间设置为: {parsed_injection_time.strftime('%H:%M')}")
+                    else:
+                        st.error("请输入有效的时间格式 (如: 1442)")
+                injection_time = st.session_state.injection_time_state
+            else:
+                injection_time = st.time_input(
+                    "注射时间 (GMT+8)",
+                    value=st.session_state.injection_time_state,
+                    key="injection_time_input"
+                )
+                st.session_state.injection_time_state = injection_time
 
         injection_site = st.selectbox(
             "注射部位",
