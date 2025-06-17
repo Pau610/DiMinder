@@ -220,7 +220,7 @@ except Exception as e:
     st.error(f"初始化预测模型时发生错误: {str(e)}")
 
 # Main title
-st.title("🩺 糖尿病管理系统")
+st.title("📔 我的日記")
 
 # Daily Summary Section
 st.markdown("### 📋 每日记录摘要")
