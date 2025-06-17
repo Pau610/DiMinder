@@ -644,13 +644,15 @@ else:
                     )
                     st.plotly_chart(fig_real_time, use_container_width=True)
 
-                    # Check if any predicted values are dangerous
-                    if np.any(real_time_predictions <= 40):
+                    # Check if any predicted values are dangerous (convert to mmol/L thresholds)
+                    # 40 mg/dL = 2.2 mmol/L, 70 mg/dL = 3.9 mmol/L, 180 mg/dL = 10.0 mmol/L
+                    predictions_mmol = [p / 18.0182 for p in real_time_predictions]
+                    if np.any(np.array(predictions_mmol) <= 2.2):
                         st.error("⚠️ 危险！预测未来30分钟内可能出现严重低血糖，请立即采取预防措施！")
-                    elif np.any(real_time_predictions < 70):
+                    elif np.any(np.array(predictions_mmol) < 3.9):
                         st.warning("⚠️ 注意！预测未来30分钟内可能出现低血糖，请做好准备。")
 
-                    if np.any(real_time_predictions > 180) or np.any(real_time_predictions < 70):
+                    if np.any(np.array(predictions_mmol) > 10.0) or np.any(np.array(predictions_mmol) < 3.9):
                         st.warning("⚠️ 预测显示血糖可能会超出目标范围，请注意监测")
                 else:
                     st.info("需要至少1小时的数据来进行实时预测")
@@ -756,10 +758,15 @@ else:
 
                         fig_real_time = go.Figure()
 
+                        # Convert to mmol/L for display
+                        real_time_predictions_mmol = [p / 18.0182 for p in real_time_predictions]
+                        upper_bound_mmol = [p / 18.0182 for p in upper_bound]
+                        lower_bound_mmol = [p / 18.0182 for p in lower_bound]
+
                         # Add prediction intervals
                         fig_real_time.add_trace(go.Scatter(
                             x=pred_times + pred_times[::-1],
-                            y=np.concatenate([upper_bound, lower_bound[::-1]]),
+                            y=np.concatenate([upper_bound_mmol, lower_bound_mmol[::-1]]),
                             fill='toself',
                             fillcolor='rgba(0,176,246,0.2)',
                             line=dict(color='rgba(255,255,255,0)'),
@@ -769,7 +776,7 @@ else:
                         # Add predictions
                         fig_real_time.add_trace(go.Scatter(
                             x=pred_times,
-                            y=real_time_predictions,
+                            y=real_time_predictions_mmol,
                             name='预测值',
                             line=dict(color='red', width=2)
                         ))
@@ -777,18 +784,20 @@ else:
                         fig_real_time.update_layout(
                             title='未来30分钟血糖预测',
                             xaxis_title='时间',
-                            yaxis_title='血糖值 (mg/dL)',
+                            yaxis_title='血糖值 (mmol/L)',
                             height=300
                         )
                         st.plotly_chart(fig_real_time, use_container_width=True)
 
-                        # Check if any predicted values are dangerous
-                        if np.any(real_time_predictions <= 40):
+                        # Check if any predicted values are dangerous (convert to mmol/L thresholds)
+                        # 40 mg/dL = 2.2 mmol/L, 70 mg/dL = 3.9 mmol/L, 180 mg/dL = 10.0 mmol/L
+                        predictions_mmol = [p / 18.0182 for p in real_time_predictions]
+                        if np.any(np.array(predictions_mmol) <= 2.2):
                             st.error("⚠️ 危险！预测未来30分钟内可能出现严重低血糖，请立即采取预防措施！")
-                        elif np.any(real_time_predictions < 70):
+                        elif np.any(np.array(predictions_mmol) < 3.9):
                             st.warning("⚠️ 注意！预测未来30分钟内可能出现低血糖，请做好准备。")
 
-                        if np.any(real_time_predictions > 180) or np.any(real_time_predictions < 70):
+                        if np.any(np.array(predictions_mmol) > 10.0) or np.any(np.array(predictions_mmol) < 3.9):
                             st.warning("⚠️ 预测显示血糖可能会超出目标范围，请注意监测")
                 else:
                     st.info("需要至少1小时的数据来进行实时预测")
