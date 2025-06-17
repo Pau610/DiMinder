@@ -539,8 +539,9 @@ with st.sidebar:
 
     # Show selected input form
     if st.session_state.input_type == 'glucose':
-        # Blood glucose input
-        with st.expander("记录血糖", expanded=st.session_state.glucose_expander_open):
+        # Blood glucose input - using container instead of expander to prevent closing
+        st.subheader("🩸 记录血糖")
+        with st.container(border=True):
             # 添加日期选择器
             col1, col2 = st.columns(2)
             with col1:
@@ -597,8 +598,9 @@ with st.sidebar:
                     st.error("请输入血糖值")
 
     elif st.session_state.input_type == 'meal':
-        # Meal input
-        with st.expander("记录饮食", expanded=st.session_state.meal_expander_open):
+        # Meal input - using container instead of expander to prevent closing
+        st.subheader("🍽️ 记录饮食")
+        with st.container(border=True):
             # 添加日期选择器
             col1, col2 = st.columns(2)
             with col1:
@@ -697,8 +699,9 @@ with st.sidebar:
                 st.info("请添加食物和碳水化合物含量")
 
     elif st.session_state.input_type == 'insulin':
-        # Insulin injection input
-        with st.expander("记录胰岛素注射", expanded=st.session_state.insulin_expander_open):
+        # Insulin injection input - using container instead of expander to prevent closing
+        st.subheader("💉 记录胰岛素注射")
+        with st.container(border=True):
             # 添加日期选择器
             col1, col2 = st.columns(2)
             with col1:
