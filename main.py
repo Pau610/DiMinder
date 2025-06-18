@@ -1031,11 +1031,73 @@ if st.session_state.input_type == 'glucose':
             hk_now = datetime.now(HK_TZ)
             st.session_state.glucose_time_state = hk_now.strftime("%H:%M")
         
+        # Custom time input with clear button
+        components.html(f"""
+        <div style="margin-bottom: 10px;">
+            <label style="font-size: 14px; font-weight: 600; margin-bottom: 4px; display: block;">记录时间 (GMT+8)</label>
+            <div style="position: relative; display: flex; align-items: center;">
+                <input 
+                    type="text" 
+                    id="glucose_time_input_custom" 
+                    value="{st.session_state.glucose_time_state}"
+                    placeholder="例如: 1430 或 14:30"
+                    style="
+                        width: 100%; 
+                        padding: 8px 35px 8px 12px; 
+                        border: 1px solid #d1d5db; 
+                        border-radius: 6px; 
+                        font-size: 14px;
+                        background-color: white;
+                    "
+                    oninput="updateGlucoseTime(this.value)"
+                />
+                <button 
+                    onclick="clearGlucoseTime()" 
+                    style="
+                        position: absolute; 
+                        right: 8px; 
+                        background: none; 
+                        border: none; 
+                        color: #6b7280; 
+                        cursor: pointer; 
+                        font-size: 16px;
+                        padding: 4px;
+                        border-radius: 3px;
+                    "
+                    onmouseover="this.style.backgroundColor='#f3f4f6'"
+                    onmouseout="this.style.backgroundColor='transparent'"
+                    title="清除时间"
+                >×</button>
+            </div>
+            <small style="color: #6b7280; font-size: 12px;">支持格式: 1430, 14:30, 930, 9:30</small>
+        </div>
+        <script>
+            function updateGlucoseTime(value) {{
+                window.parent.postMessage({{
+                    type: 'glucose_time_update',
+                    value: value
+                }}, '*');
+            }}
+            
+            function clearGlucoseTime() {{
+                document.getElementById('glucose_time_input_custom').value = '';
+                updateGlucoseTime('');
+            }}
+            
+            // Listen for updates from Streamlit
+            window.addEventListener('message', function(event) {{
+                if (event.data.type === 'glucose_time_set') {{
+                    document.getElementById('glucose_time_input_custom').value = event.data.value;
+                }}
+            }});
+        </script>
+        """, height=80)
+        
+        # Hidden input to capture the value
         time_input_str = st.text_input(
-            "记录时间 (GMT+8)",
+            "glucose_time_hidden",
             value=st.session_state.glucose_time_state,
-            placeholder="例如: 1430 或 14:30",
-            help="支持格式: 1430, 14:30, 930, 9:30",
+            label_visibility="hidden",
             key="glucose_time_input"
         )
         
@@ -1096,11 +1158,66 @@ elif st.session_state.input_type == 'meal':
             hk_now = datetime.now(HK_TZ)
             st.session_state.meal_time_state = hk_now.strftime("%H:%M")
         
+        # Custom meal time input with clear button
+        components.html(f"""
+        <div style="margin-bottom: 10px;">
+            <label style="font-size: 14px; font-weight: 600; margin-bottom: 4px; display: block;">用餐时间 (GMT+8)</label>
+            <div style="position: relative; display: flex; align-items: center;">
+                <input 
+                    type="text" 
+                    id="meal_time_input_custom" 
+                    value="{st.session_state.meal_time_state}"
+                    placeholder="例如: 1230 或 12:30"
+                    style="
+                        width: 100%; 
+                        padding: 8px 35px 8px 12px; 
+                        border: 1px solid #d1d5db; 
+                        border-radius: 6px; 
+                        font-size: 14px;
+                        background-color: white;
+                    "
+                    oninput="updateMealTime(this.value)"
+                />
+                <button 
+                    onclick="clearMealTime()" 
+                    style="
+                        position: absolute; 
+                        right: 8px; 
+                        background: none; 
+                        border: none; 
+                        color: #6b7280; 
+                        cursor: pointer; 
+                        font-size: 16px;
+                        padding: 4px;
+                        border-radius: 3px;
+                    "
+                    onmouseover="this.style.backgroundColor='#f3f4f6'"
+                    onmouseout="this.style.backgroundColor='transparent'"
+                    title="清除时间"
+                >×</button>
+            </div>
+            <small style="color: #6b7280; font-size: 12px;">支持格式: 1230, 12:30, 730, 7:30</small>
+        </div>
+        <script>
+            function updateMealTime(value) {{
+                window.parent.postMessage({{
+                    type: 'meal_time_update',
+                    value: value
+                }}, '*');
+            }}
+            
+            function clearMealTime() {{
+                document.getElementById('meal_time_input_custom').value = '';
+                updateMealTime('');
+            }}
+        </script>
+        """, height=80)
+        
+        # Hidden input to capture the value
         meal_time_input_str = st.text_input(
-            "用餐时间 (GMT+8)",
+            "meal_time_hidden",
             value=st.session_state.meal_time_state,
-            placeholder="例如: 1230 或 12:30",
-            help="支持格式: 1230, 12:30, 730, 7:30",
+            label_visibility="hidden",
             key="meal_time_input"
         )
         
@@ -1203,11 +1320,66 @@ elif st.session_state.input_type == 'insulin':
             hk_now = datetime.now(HK_TZ)
             st.session_state.injection_time_state = hk_now.strftime("%H:%M")
         
+        # Custom injection time input with clear button
+        components.html(f"""
+        <div style="margin-bottom: 10px;">
+            <label style="font-size: 14px; font-weight: 600; margin-bottom: 4px; display: block;">注射时间 (GMT+8)</label>
+            <div style="position: relative; display: flex; align-items: center;">
+                <input 
+                    type="text" 
+                    id="injection_time_input_custom" 
+                    value="{st.session_state.injection_time_state}"
+                    placeholder="例如: 0800 或 08:00"
+                    style="
+                        width: 100%; 
+                        padding: 8px 35px 8px 12px; 
+                        border: 1px solid #d1d5db; 
+                        border-radius: 6px; 
+                        font-size: 14px;
+                        background-color: white;
+                    "
+                    oninput="updateInjectionTime(this.value)"
+                />
+                <button 
+                    onclick="clearInjectionTime()" 
+                    style="
+                        position: absolute; 
+                        right: 8px; 
+                        background: none; 
+                        border: none; 
+                        color: #6b7280; 
+                        cursor: pointer; 
+                        font-size: 16px;
+                        padding: 4px;
+                        border-radius: 3px;
+                    "
+                    onmouseover="this.style.backgroundColor='#f3f4f6'"
+                    onmouseout="this.style.backgroundColor='transparent'"
+                    title="清除时间"
+                >×</button>
+            </div>
+            <small style="color: #6b7280; font-size: 12px;">支持格式: 0800, 08:00, 800, 8:00</small>
+        </div>
+        <script>
+            function updateInjectionTime(value) {{
+                window.parent.postMessage({{
+                    type: 'injection_time_update',
+                    value: value
+                }}, '*');
+            }}
+            
+            function clearInjectionTime() {{
+                document.getElementById('injection_time_input_custom').value = '';
+                updateInjectionTime('');
+            }}
+        </script>
+        """, height=80)
+        
+        # Hidden input to capture the value
         injection_time_input_str = st.text_input(
-            "注射时间 (GMT+8)",
+            "injection_time_hidden",
             value=st.session_state.injection_time_state,
-            placeholder="例如: 0800 或 08:00",
-            help="支持格式: 0800, 08:00, 800, 8:00",
+            label_visibility="hidden",
             key="injection_time_input"
         )
         
