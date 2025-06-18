@@ -970,12 +970,41 @@ with col1:
             daily_summary = generate_daily_summary(selected_date)
             
             if daily_summary:
-                st.text_area(
-                    "每日摘要 (可复制)",
-                    value=daily_summary,
-                    height=200,
-                    key="daily_summary_text"
-                )
+                col_summary, col_copy = st.columns([5, 1])
+                with col_summary:
+                    st.text_area(
+                        "每日摘要 (可复制)",
+                        value=daily_summary,
+                        height=200,
+                        key="daily_summary_text"
+                    )
+                with col_copy:
+                    st.write("")  # Add spacing
+                    if st.button("📋 复制", key="copy_summary_btn", help="复制每日摘要到剪贴板"):
+                        # Prepare text for JavaScript (escape special characters)
+                        escaped_summary = daily_summary.replace('`', '\\`').replace('$', '\\$').replace('\\', '\\\\').replace('\n', '\\n').replace('\r', '\\r')
+                        
+                        # Use HTML/JavaScript to copy to clipboard
+                        components.html(f"""
+                        <script>
+                            const textToCopy = `{escaped_summary}`;
+                            navigator.clipboard.writeText(textToCopy).then(function() {{
+                                // Success - show feedback
+                                alert('每日摘要已复制到剪贴板！');
+                            }}).catch(function(err) {{
+                                console.error('Failed to copy: ', err);
+                                // Fallback for older browsers
+                                const textArea = document.createElement('textarea');
+                                textArea.value = textToCopy;
+                                document.body.appendChild(textArea);
+                                textArea.select();
+                                document.execCommand('copy');
+                                document.body.removeChild(textArea);
+                                alert('每日摘要已复制到剪贴板！');
+                            }});
+                        </script>
+                        """, height=0)
+                        st.success("已复制到剪贴板！")
             else:
                 st.info("选择的日期没有记录")
         else:
