@@ -1076,10 +1076,10 @@ if st.session_state.input_type == 'glucose':
                 // Store the raw input value
                 window.glucoseTimeRawInput = value;
                 
-                // Auto-format the time as user types
-                if (value && value.length >= 3) {{
+                // Auto-format the time only when complete
+                if (value && (value.length === 3 || value.length === 4)) {{
                     let formatted = formatTimeInput(value);
-                    if (formatted !== value) {{
+                    if (formatted !== value && formatted.includes(':')) {{
                         document.getElementById('glucose_time_input_custom').value = formatted;
                         window.glucoseTimeRawInput = formatted;
                     }}
@@ -1090,14 +1090,24 @@ if st.session_state.input_type == 'glucose':
                 // Remove any non-digit characters except colon
                 let cleaned = input.replace(/[^0-9:]/g, '');
                 
-                // Handle 4-digit format (1430 -> 14:30)
+                // Handle 4-digit format (2350 -> 23:50)
                 if (cleaned.length === 4 && !cleaned.includes(':')) {{
-                    return cleaned.substring(0, 2) + ':' + cleaned.substring(2);
+                    let hours = parseInt(cleaned.substring(0, 2));
+                    let minutes = parseInt(cleaned.substring(2));
+                    // Validate hours (00-23) and minutes (00-59)
+                    if (hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59) {{
+                        return cleaned.substring(0, 2) + ':' + cleaned.substring(2);
+                    }}
                 }}
                 
                 // Handle 3-digit format (930 -> 09:30)
                 if (cleaned.length === 3 && !cleaned.includes(':')) {{
-                    return '0' + cleaned.substring(0, 1) + ':' + cleaned.substring(1);
+                    let hour = parseInt(cleaned.substring(0, 1));
+                    let minutes = parseInt(cleaned.substring(1));
+                    // Validate hour (0-9) and minutes (00-59)
+                    if (hour >= 0 && hour <= 9 && minutes >= 0 && minutes <= 59) {{
+                        return '0' + cleaned.substring(0, 1) + ':' + cleaned.substring(1);
+                    }}
                 }}
                 
                 return cleaned;
@@ -1215,10 +1225,10 @@ elif st.session_state.input_type == 'meal':
                 // Store the raw input value
                 window.mealTimeRawInput = value;
                 
-                // Auto-format the time as user types
-                if (value && value.length >= 3) {{
+                // Auto-format the time only when complete
+                if (value && (value.length === 3 || value.length === 4)) {{
                     let formatted = formatTimeInput(value);
-                    if (formatted !== value) {{
+                    if (formatted !== value && formatted.includes(':')) {{
                         document.getElementById('meal_time_input_custom').value = formatted;
                         window.mealTimeRawInput = formatted;
                     }}
@@ -1229,14 +1239,24 @@ elif st.session_state.input_type == 'meal':
                 // Remove any non-digit characters except colon
                 let cleaned = input.replace(/[^0-9:]/g, '');
                 
-                // Handle 4-digit format (1430 -> 14:30)
+                // Handle 4-digit format (2350 -> 23:50)
                 if (cleaned.length === 4 && !cleaned.includes(':')) {{
-                    return cleaned.substring(0, 2) + ':' + cleaned.substring(2);
+                    let hours = parseInt(cleaned.substring(0, 2));
+                    let minutes = parseInt(cleaned.substring(2));
+                    // Validate hours (00-23) and minutes (00-59)
+                    if (hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59) {{
+                        return cleaned.substring(0, 2) + ':' + cleaned.substring(2);
+                    }}
                 }}
                 
                 // Handle 3-digit format (930 -> 09:30)
                 if (cleaned.length === 3 && !cleaned.includes(':')) {{
-                    return '0' + cleaned.substring(0, 1) + ':' + cleaned.substring(1);
+                    let hour = parseInt(cleaned.substring(0, 1));
+                    let minutes = parseInt(cleaned.substring(1));
+                    // Validate hour (0-9) and minutes (00-59)
+                    if (hour >= 0 && hour <= 9 && minutes >= 0 && minutes <= 59) {{
+                        return '0' + cleaned.substring(0, 1) + ':' + cleaned.substring(1);
+                    }}
                 }}
                 
                 return cleaned;
@@ -1396,10 +1416,10 @@ elif st.session_state.input_type == 'insulin':
                 // Store the raw input value
                 window.injectionTimeRawInput = value;
                 
-                // Auto-format the time as user types
-                if (value && value.length >= 3) {{
+                // Auto-format the time only when complete
+                if (value && (value.length === 3 || value.length === 4)) {{
                     let formatted = formatTimeInput(value);
-                    if (formatted !== value) {{
+                    if (formatted !== value && formatted.includes(':')) {{
                         document.getElementById('injection_time_input_custom').value = formatted;
                         window.injectionTimeRawInput = formatted;
                     }}
@@ -1410,14 +1430,24 @@ elif st.session_state.input_type == 'insulin':
                 // Remove any non-digit characters except colon
                 let cleaned = input.replace(/[^0-9:]/g, '');
                 
-                // Handle 4-digit format (1430 -> 14:30)
+                // Handle 4-digit format (2350 -> 23:50)
                 if (cleaned.length === 4 && !cleaned.includes(':')) {{
-                    return cleaned.substring(0, 2) + ':' + cleaned.substring(2);
+                    let hours = parseInt(cleaned.substring(0, 2));
+                    let minutes = parseInt(cleaned.substring(2));
+                    // Validate hours (00-23) and minutes (00-59)
+                    if (hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59) {{
+                        return cleaned.substring(0, 2) + ':' + cleaned.substring(2);
+                    }}
                 }}
                 
                 // Handle 3-digit format (930 -> 09:30)
                 if (cleaned.length === 3 && !cleaned.includes(':')) {{
-                    return '0' + cleaned.substring(0, 1) + ':' + cleaned.substring(1);
+                    let hour = parseInt(cleaned.substring(0, 1));
+                    let minutes = parseInt(cleaned.substring(1));
+                    // Validate hour (0-9) and minutes (00-59)
+                    if (hour >= 0 && hour <= 9 && minutes >= 0 && minutes <= 59) {{
+                        return '0' + cleaned.substring(0, 1) + ':' + cleaned.substring(1);
+                    }}
                 }}
                 
                 return cleaned;
