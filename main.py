@@ -2143,10 +2143,24 @@ else:
                         """, unsafe_allow_html=True)
                         
                         if st.button("×", key=f"delete_glucose_{idx}"):
-                            st.session_state.glucose_data = st.session_state.glucose_data.drop(idx).reset_index(drop=True)
-                            save_persistent_data()
-                            st.success("血糖记录已删除")
-                            st.rerun()
+                            # Set confirmation state
+                            st.session_state[f"confirm_delete_glucose_{idx}"] = True
+                        
+                        # Show confirmation dialog if needed
+                        if st.session_state.get(f"confirm_delete_glucose_{idx}", False):
+                            st.warning("确定要删除此血糖记录吗？")
+                            col_yes, col_no = st.columns(2)
+                            with col_yes:
+                                if st.button("确定删除", key=f"confirm_yes_glucose_{idx}", type="primary"):
+                                    st.session_state.glucose_data = st.session_state.glucose_data.drop(idx).reset_index(drop=True)
+                                    save_persistent_data()
+                                    del st.session_state[f"confirm_delete_glucose_{idx}"]
+                                    st.success("血糖记录已删除")
+                                    st.rerun()
+                            with col_no:
+                                if st.button("取消", key=f"confirm_no_glucose_{idx}"):
+                                    del st.session_state[f"confirm_delete_glucose_{idx}"]
+                                    st.rerun()
                 
                 # Glucose statistics
                 col1, col2, col3, col4 = st.columns(4)
@@ -2225,10 +2239,24 @@ else:
                         """, unsafe_allow_html=True)
                         
                         if st.button("×", key=f"delete_insulin_{idx}"):
-                            st.session_state.glucose_data = st.session_state.glucose_data.drop(idx).reset_index(drop=True)
-                            save_persistent_data()
-                            st.success("胰岛素记录已删除")
-                            st.rerun()
+                            # Set confirmation state
+                            st.session_state[f"confirm_delete_insulin_{idx}"] = True
+                        
+                        # Show confirmation dialog if needed
+                        if st.session_state.get(f"confirm_delete_insulin_{idx}", False):
+                            st.warning("确定要删除此胰岛素记录吗？")
+                            col_yes, col_no = st.columns(2)
+                            with col_yes:
+                                if st.button("确定删除", key=f"confirm_yes_insulin_{idx}", type="primary"):
+                                    st.session_state.glucose_data = st.session_state.glucose_data.drop(idx).reset_index(drop=True)
+                                    save_persistent_data()
+                                    del st.session_state[f"confirm_delete_insulin_{idx}"]
+                                    st.success("胰岛素记录已删除")
+                                    st.rerun()
+                            with col_no:
+                                if st.button("取消", key=f"confirm_no_insulin_{idx}"):
+                                    del st.session_state[f"confirm_delete_insulin_{idx}"]
+                                    st.rerun()
                 
                 # Insulin statistics
                 col1, col2, col3, col4 = st.columns(4)
@@ -2309,10 +2337,24 @@ else:
                         """, unsafe_allow_html=True)
                         
                         if st.button("×", key=f"delete_meal_{idx}"):
-                            st.session_state.glucose_data = st.session_state.glucose_data.drop(idx).reset_index(drop=True)
-                            save_persistent_data()
-                            st.success("饮食记录已删除")
-                            st.rerun()
+                            # Set confirmation state
+                            st.session_state[f"confirm_delete_meal_{idx}"] = True
+                        
+                        # Show confirmation dialog if needed
+                        if st.session_state.get(f"confirm_delete_meal_{idx}", False):
+                            st.warning("确定要删除此饮食记录吗？")
+                            col_yes, col_no = st.columns(2)
+                            with col_yes:
+                                if st.button("确定删除", key=f"confirm_yes_meal_{idx}", type="primary"):
+                                    st.session_state.glucose_data = st.session_state.glucose_data.drop(idx).reset_index(drop=True)
+                                    save_persistent_data()
+                                    del st.session_state[f"confirm_delete_meal_{idx}"]
+                                    st.success("饮食记录已删除")
+                                    st.rerun()
+                            with col_no:
+                                if st.button("取消", key=f"confirm_no_meal_{idx}"):
+                                    del st.session_state[f"confirm_delete_meal_{idx}"]
+                                    st.rerun()
                     
                     # Second line: food details
                     st.caption(f"  → {food_details}")
