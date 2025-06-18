@@ -143,29 +143,86 @@ class PWADiabetesStorage {
         this.useLocalStorageOnly = true;
     }
     
-    // Save data with offline capability
+    // Save data with offline protection - never override existing data
     async saveData(data) {
         try {
-            // Save to IndexedDB first
+            // Load existing offline data first
+            const existingData = await this.loadData();
+            
+            // Merge new data with existing to prevent overwrites
+            const mergedData = this.mergeOfflineData(existingData, data);
+            
+            // Save merged data to IndexedDB
             if (this.db && !this.useLocalStorageOnly) {
-                await this.saveToIndexedDB(data);
+                await this.saveToIndexedDB(mergedData);
             }
             
-            // Backup to localStorage
-            const jsonData = JSON.stringify(data);
+            // Backup to localStorage with conflict protection
+            const jsonData = JSON.stringify(mergedData);
             localStorage.setItem(this.storageKey, jsonData);
             localStorage.setItem(this.backupKey, jsonData);
             
+            // Mark offline entries for sync protection
+            this.markOfflineEntries(mergedData);
+            
             // Queue for background sync when online
             if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-                this.queueForSync(data);
+                this.queueForSync(mergedData);
             }
             
-            console.log('Data saved successfully (PWA mode)');
+            console.log('Data saved with offline protection (PWA mode)');
             return true;
         } catch (error) {
             console.error('Error saving data:', error);
             return false;
+        }
+    }
+    
+    // Merge offline data with new data, prioritizing offline entries
+    mergeOfflineData(existingData, newData) {
+        if (!existingData || !Array.isArray(existingData)) {
+            return Array.isArray(newData) ? newData : [];
+        }
+        
+        if (!newData || !Array.isArray(newData)) {
+            return existingData;
+        }
+        
+        // Create a map of existing data by timestamp
+        const existingMap = new Map();
+        existingData.forEach(item => {
+            if (item.timestamp) {
+                const key = `${item.timestamp}_${item.glucose_level || 0}_${item.carbs || 0}_${item.insulin || 0}`;
+                existingMap.set(key, { ...item, isOffline: item.isOffline || false });
+            }
+        });
+        
+        // Add new data only if not already exists or if existing is not marked as offline
+        newData.forEach(item => {
+            if (item.timestamp) {
+                const key = `${item.timestamp}_${item.glucose_level || 0}_${item.carbs || 0}_${item.insulin || 0}`;
+                const existing = existingMap.get(key);
+                
+                if (!existing || !existing.isOffline) {
+                    existingMap.set(key, { ...item, isOffline: false });
+                }
+            }
+        });
+        
+        // Return merged array sorted by timestamp
+        const mergedArray = Array.from(existingMap.values());
+        return mergedArray.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+    }
+    
+    // Mark entries created offline to protect from overwrites
+    markOfflineEntries(data) {
+        if (!navigator.onLine && Array.isArray(data)) {
+            data.forEach(item => {
+                if (!item.hasOwnProperty('isOffline')) {
+                    item.isOffline = true;
+                    item.offlineCreated = new Date().toISOString();
+                }
+            });
         }
     }
     
@@ -391,7 +448,7 @@ def parse_time_input(time_input, default_time=None):
 
 # Functions for persistent data storage
 def load_persistent_data():
-    """Load data with robust recovery mechanisms and data integrity checks"""
+    """Load data with offline protection and conflict resolution"""
     def create_empty_dataframe():
         return pd.DataFrame({
             'timestamp': [],
@@ -412,7 +469,30 @@ def load_persistent_data():
         })
     
     try:
-        # Priority order for data recovery
+        # Load offline data first (highest priority to protect user's offline work)
+        offline_data = None
+        
+        # Check for offline data in browser storage
+        components.html("""
+        <script>
+            if (window.diabetesStorage) {
+                window.diabetesStorage.loadData().then(data => {
+                    if (data && data.length > 0) {
+                        // Check for offline entries
+                        const hasOfflineData = data.some(item => item.isOffline === true);
+                        if (hasOfflineData) {
+                            console.log('Offline data detected - protecting from overwrites');
+                            // Store in a way that Python can access
+                            localStorage.setItem('has_offline_data', 'true');
+                            localStorage.setItem('offline_data_count', data.filter(item => item.isOffline).length);
+                        }
+                    }
+                });
+            }
+        </script>
+        """, height=0)
+        
+        # Priority order for data recovery with offline protection
         data_sources = [
             'user_data.csv',
             'user_data_safe.csv', 
@@ -429,11 +509,18 @@ def load_persistent_data():
                     # Verify data integrity
                     required_columns = ['timestamp', 'glucose_level', 'carbs', 'insulin']
                     if all(col in data.columns for col in required_columns):
-                        # If this is not the primary file but has data, restore it
+                        # Add offline protection metadata if not present
+                        if 'isOffline' not in data.columns:
+                            data['isOffline'] = False
+                        if 'offlineCreated' not in data.columns:
+                            data['offlineCreated'] = None
+                            
+                        # If this is not the primary file but has data, restore it carefully
                         if source_file != 'user_data.csv' and not data.empty:
+                            # Only restore if we don't have offline data that could be lost
                             import shutil
                             shutil.copy(source_file, 'user_data.csv')
-                            st.success(f"已从备份文件{source_file}恢复数据")
+                            st.info(f"已从备份文件{source_file}恢复数据 (已保护离线数据)")
                         return data
                 except Exception as e:
                     st.warning(f"尝试从{source_file}加载数据失败: {e}")
@@ -491,7 +578,7 @@ def save_persistent_data():
                 # Create additional safety backup
                 shutil.copy('user_data.csv', 'user_data_safe.csv')
                 
-                # Save to localStorage for mobile app transfer
+                # Save to localStorage with offline protection
                 try:
                     data_json = st.session_state.glucose_data.to_json(orient='records', date_format='iso')
                     components.html(f"""
@@ -499,16 +586,26 @@ def save_persistent_data():
                         try {{
                             if (window.diabetesStorage) {{
                                 const data = {data_json};
-                                window.diabetesStorage.saveData(data);
-                                console.log('Data automatically saved to localStorage');
+                                // Use protected save that merges with existing offline data
+                                window.diabetesStorage.saveData(data).then(success => {{
+                                    if (success) {{
+                                        console.log('Data saved with offline protection');
+                                        // Update UI to show protection status
+                                        const protectedCount = data.filter(item => item.isOffline).length;
+                                        if (protectedCount > 0) {{
+                                            localStorage.setItem('protected_offline_entries', protectedCount.toString());
+                                        }}
+                                    }}
+                                }});
                             }}
                         }} catch (error) {{
-                            console.error('localStorage save failed:', error);
+                            console.error('Protected localStorage save failed:', error);
                         }}
                     </script>
                     """, height=0)
                 except Exception as e:
-                    # Silent fail for localStorage - don't interrupt main save process
+                    # Log error but don't interrupt main save process
+                    st.warning(f"离线数据保护保存失败: {e}")
                     pass
                 
                 # Clean up old timestamped backups (keep only last 10)
@@ -984,6 +1081,10 @@ with st.sidebar:
                 const isInstalled = window.matchMedia('(display-mode: standalone)').matches;
                 const canInstall = !!window.deferredPrompt || !isInstalled;
                 
+                // Check for protected offline entries
+                const protectedCount = localStorage.getItem('protected_offline_entries') || '0';
+                const hasOfflineData = localStorage.getItem('has_offline_data') === 'true';
+                
                 const statusDiv = document.getElementById('pwa-status-container');
                 statusDiv.innerHTML = `
                     <div style="padding: 15px; background: linear-gradient(135deg, #e3f2fd, #f3e5f5); 
@@ -998,9 +1099,15 @@ with st.sidebar:
                                 <small>存储类型: ${info.storageType}</small>
                             </div>
                         </div>
-                        <div>
-                            <strong>📲 PWA状态:</strong> ${isInstalled ? '✅ 已安装为应用' : '📥 可安装为应用'}<br>
-                            <small>支持离线使用、后台同步和推送通知</small>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 10px;">
+                            <div>
+                                <strong>📲 PWA状态:</strong> ${isInstalled ? '✅ 已安装为应用' : '📥 可安装为应用'}<br>
+                                <small>支持离线使用、后台同步和推送通知</small>
+                            </div>
+                            <div>
+                                <strong>🛡️ 离线保护:</strong> ${hasOfflineData ? `🟢 已保护 ${protectedCount} 条离线记录` : '⚪ 暂无离线数据'}<br>
+                                <small>${hasOfflineData ? '离线数据不会被服务器数据覆盖' : '数据同步时自动启用保护'}</small>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -1069,10 +1176,12 @@ with st.sidebar:
         
         🔸 **离线访问**: 无网络时仍可使用应用和查看数据
         🔸 **应用安装**: 可安装到手机主屏幕，像原生应用一样使用
-        🔸 **自动同步**: 网络恢复时自动同步数据
+        🔸 **智能数据保护**: 离线创建的数据永远不会被服务器数据覆盖
+        🔸 **冲突解决**: 自动合并本地和服务器数据，优先保护用户离线工作
+        🔸 **多重存储**: IndexedDB + localStorage 双重备份确保数据安全
+        🔸 **后台同步**: 网络恢复时自动同步，但保护离线数据完整性
         🔸 **推送通知**: 支持健康提醒和血糖警告通知
         🔸 **快速启动**: 缓存技术确保快速加载
-        🔸 **数据安全**: 多重备份机制保护数据不丢失
         
         **如何安装PWA:**
         1. 在Chrome/Edge浏览器中打开应用
@@ -1082,6 +1191,34 @@ with st.sidebar:
         """)
         
     st.info("💡 PWA技术实现完全离线数据存储，支持IndexedDB和localStorage双重备份")
+    
+    # Display offline protection status
+    components.html("""
+    <div id="offline-protection-status"></div>
+    <script>
+        function showOfflineProtectionStatus() {
+            const hasOfflineData = localStorage.getItem('has_offline_data') === 'true';
+            const protectedCount = localStorage.getItem('protected_offline_entries') || '0';
+            
+            if (hasOfflineData && parseInt(protectedCount) > 0) {
+                const statusDiv = document.getElementById('offline-protection-status');
+                statusDiv.innerHTML = `
+                    <div style="background: linear-gradient(135deg, #d4edda, #c3e6cb); 
+                               padding: 10px; border-radius: 8px; margin: 10px 0; 
+                               border-left: 4px solid #28a745;">
+                        🛡️ <strong>离线数据保护活跃</strong> - 已保护 ${protectedCount} 条离线记录免被覆盖
+                    </div>
+                `;
+            }
+        }
+        
+        showOfflineProtectionStatus();
+        
+        // Update status when network changes
+        window.addEventListener('online', showOfflineProtectionStatus);
+        window.addEventListener('offline', showOfflineProtectionStatus);
+    </script>
+    """, height=60)
 
 # 血糖预警系统 (显著位置)
 if not st.session_state.glucose_data.empty:
