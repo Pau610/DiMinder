@@ -986,58 +986,58 @@ elif st.session_state.input_type == 'insulin':
     col1, col2 = st.columns(2)
     with col1:
         hk_today = datetime.now(HK_TZ).date()
-                injection_date = st.date_input(
-                    "注射日期 (GMT+8)",
-                    hk_today,
-                    max_value=hk_today,
-                    key="injection_date"
-                )
-            with col2:
-                # 初始化注射时间状态 (HK时区)
-                if 'injection_time_state' not in st.session_state:
-                    hk_now = datetime.now(HK_TZ)
-                    st.session_state.injection_time_state = hk_now.strftime("%H:%M")
-                
-                injection_time_input_str = st.text_input(
-                    "注射时间 (GMT+8)",
-                    value=st.session_state.injection_time_state,
-                    placeholder="例如: 0800 或 08:00",
-                    help="支持格式: 0800, 08:00, 800, 8:00",
-                    key="injection_time_input"
-                )
-                
-                # Parse the time input and update state
-                injection_time = parse_time_input(injection_time_input_str)
-                st.session_state.injection_time_state = injection_time.strftime("%H:%M")
-                
-                # Display parsed time for confirmation
-                if injection_time_input_str:
-                    st.caption(f"解析时间: {injection_time.strftime('%H:%M')}")
+        injection_date = st.date_input(
+            "注射日期 (GMT+8)",
+            hk_today,
+            max_value=hk_today,
+            key="injection_date"
+        )
+    with col2:
+        # 初始化注射时间状态 (HK时区)
+        if 'injection_time_state' not in st.session_state:
+            hk_now = datetime.now(HK_TZ)
+            st.session_state.injection_time_state = hk_now.strftime("%H:%M")
+        
+        injection_time_input_str = st.text_input(
+            "注射时间 (GMT+8)",
+            value=st.session_state.injection_time_state,
+            placeholder="例如: 0800 或 08:00",
+            help="支持格式: 0800, 08:00, 800, 8:00",
+            key="injection_time_input"
+        )
+        
+        # Parse the time input and update state
+        injection_time = parse_time_input(injection_time_input_str)
+        st.session_state.injection_time_state = injection_time.strftime("%H:%M")
+        
+        # Display parsed time for confirmation
+        if injection_time_input_str:
+            st.caption(f"解析时间: {injection_time.strftime('%H:%M')}")
 
-            # 注射部位选择
-            injection_site = st.selectbox(
-                "注射部位",
-                ["腹部", "大腿", "手臂", "臀部"],
-                key="injection_site_select"
-            )
+    # 注射部位选择
+    injection_site = st.selectbox(
+        "注射部位",
+        ["腹部", "大腿", "手臂", "臀部"],
+        key="injection_site_select"
+    )
 
-            # 胰岛素类型和剂量
-            insulin_type = st.selectbox(
-                "胰岛素类型",
-                ["短效胰岛素", "中效胰岛素", "长效胰岛素"],
-                key="insulin_type_select"
-            )
-            insulin_dose = st.number_input(
-                "胰岛素剂量 (单位)",
-                min_value=0.0, 
-                max_value=100.0, 
-                value=None,
-                step=0.5,
-                placeholder="请输入剂量",
-                key="insulin_dose"
-            )
+    # 胰岛素类型和剂量
+    insulin_type = st.selectbox(
+        "胰岛素类型",
+        ["短效胰岛素", "中效胰岛素", "长效胰岛素"],
+        key="insulin_type_select"
+    )
+    insulin_dose = st.number_input(
+        "胰岛素剂量 (单位)",
+        min_value=0.0, 
+        max_value=100.0, 
+        value=None,
+        step=0.5,
+        placeholder="请输入剂量",
+        key="insulin_dose"
+    )
 
-            if st.button("添加注射记录", use_container_width=True):
+    if st.button("添加注射记录", use_container_width=True):
                 if insulin_dose is not None and insulin_dose > 0:
                     injection_datetime = datetime.combine(injection_date, injection_time)
                     new_injection = {
