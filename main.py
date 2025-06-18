@@ -2177,57 +2177,30 @@ else:
                     glucose_mmol = round(row['glucose_level'] / 18.0182, 1)
                     status = '严重低血糖' if row['glucose_level'] <= 40 else ('低血糖' if row['glucose_level'] < 70 else ('正常' if row['glucose_level'] <= 180 else '高血糖'))
                     
-                    # Create exact layout match with daily summary using columns and custom CSS
-                    col1, col2 = st.columns([0.88, 0.12])
-                    
+                    # Create inline layout with simple columns
+                    col1, col2 = st.columns([0.9, 0.1])
                     with col1:
-                        st.markdown(f"""
-                        <div style="display: flex; align-items: center; margin-bottom: 5px; padding-top: 8px;">
-                            <span><strong>{row['timestamp'].strftime('%Y-%m-%d %H:%M')}</strong> | {glucose_mmol} mmol/L | {status}</span>
-                        </div>
-                        """, unsafe_allow_html=True)
-                    
+                        st.write(f"**{row['timestamp'].strftime('%Y-%m-%d %H:%M')}** | {glucose_mmol} mmol/L | {status}")
                     with col2:
-                        st.markdown("""
-                        <style>
-                        .stButton > button {
-                            background: #ff4b4b !important;
-                            color: white !important;
-                            border: none !important;
-                            border-radius: 4px !important;
-                            padding: 4px 8px !important;
-                            font-size: 12px !important;
-                            cursor: pointer !important;
-                            height: 32px !important;
-                            min-height: 32px !important;
-                            width: 32px !important;
-                            margin-top: 8px !important;
-                        }
-                        .stButton > button:hover {
-                            background: #e03e3e !important;
-                        }
-                        </style>
-                        """, unsafe_allow_html=True)
-                        
                         if st.button("×", key=f"delete_glucose_{idx}"):
                             # Set confirmation state
                             st.session_state[f"confirm_delete_glucose_{idx}"] = True
-                        
-                        # Show confirmation dialog if needed
-                        if st.session_state.get(f"confirm_delete_glucose_{idx}", False):
-                            st.warning("确定要删除此血糖记录吗？")
-                            col_yes, col_no = st.columns(2)
-                            with col_yes:
-                                if st.button("确定删除", key=f"confirm_yes_glucose_{idx}", type="primary"):
-                                    st.session_state.glucose_data = st.session_state.glucose_data.drop(idx).reset_index(drop=True)
-                                    save_persistent_data()
-                                    del st.session_state[f"confirm_delete_glucose_{idx}"]
-                                    st.success("血糖记录已删除")
-                                    st.rerun()
-                            with col_no:
-                                if st.button("取消", key=f"confirm_no_glucose_{idx}"):
-                                    del st.session_state[f"confirm_delete_glucose_{idx}"]
-                                    st.rerun()
+                    
+                    # Show confirmation dialog if needed
+                    if st.session_state.get(f"confirm_delete_glucose_{idx}", False):
+                        st.warning("确定要删除此血糖记录吗？")
+                        col_yes, col_no = st.columns(2)
+                        with col_yes:
+                            if st.button("确定删除", key=f"confirm_yes_glucose_{idx}", type="primary"):
+                                st.session_state.glucose_data = st.session_state.glucose_data.drop(idx).reset_index(drop=True)
+                                save_persistent_data()
+                                del st.session_state[f"confirm_delete_glucose_{idx}"]
+                                st.success("血糖记录已删除")
+                                st.rerun()
+                        with col_no:
+                            if st.button("取消", key=f"confirm_no_glucose_{idx}"):
+                                del st.session_state[f"confirm_delete_glucose_{idx}"]
+                                st.rerun()
                 
                 # Glucose statistics
                 col1, col2, col3, col4 = st.columns(4)
@@ -2273,57 +2246,30 @@ else:
                     insulin_type = row['insulin_type'] if pd.notna(row['insulin_type']) else '未指定'
                     injection_site = row['injection_site'] if pd.notna(row['injection_site']) else '未指定'
                     
-                    # Create exact layout match with daily summary using columns and custom CSS
-                    col1, col2 = st.columns([0.88, 0.12])
-                    
+                    # Create inline layout with simple columns
+                    col1, col2 = st.columns([0.9, 0.1])
                     with col1:
-                        st.markdown(f"""
-                        <div style="display: flex; align-items: center; margin-bottom: 5px; padding-top: 8px;">
-                            <span><strong>{row['timestamp'].strftime('%Y-%m-%d %H:%M')}</strong> | {row['insulin']:.1f}单位 | {insulin_type} | {injection_site}</span>
-                        </div>
-                        """, unsafe_allow_html=True)
-                    
+                        st.write(f"**{row['timestamp'].strftime('%Y-%m-%d %H:%M')}** | {row['insulin']:.1f}单位 | {insulin_type} | {injection_site}")
                     with col2:
-                        st.markdown("""
-                        <style>
-                        .stButton > button {
-                            background: #ff4b4b !important;
-                            color: white !important;
-                            border: none !important;
-                            border-radius: 4px !important;
-                            padding: 4px 8px !important;
-                            font-size: 12px !important;
-                            cursor: pointer !important;
-                            height: 32px !important;
-                            min-height: 32px !important;
-                            width: 32px !important;
-                            margin-top: 8px !important;
-                        }
-                        .stButton > button:hover {
-                            background: #e03e3e !important;
-                        }
-                        </style>
-                        """, unsafe_allow_html=True)
-                        
                         if st.button("×", key=f"delete_insulin_{idx}"):
                             # Set confirmation state
                             st.session_state[f"confirm_delete_insulin_{idx}"] = True
-                        
-                        # Show confirmation dialog if needed
-                        if st.session_state.get(f"confirm_delete_insulin_{idx}", False):
-                            st.warning("确定要删除此胰岛素记录吗？")
-                            col_yes, col_no = st.columns(2)
-                            with col_yes:
-                                if st.button("确定删除", key=f"confirm_yes_insulin_{idx}", type="primary"):
-                                    st.session_state.glucose_data = st.session_state.glucose_data.drop(idx).reset_index(drop=True)
-                                    save_persistent_data()
-                                    del st.session_state[f"confirm_delete_insulin_{idx}"]
-                                    st.success("胰岛素记录已删除")
-                                    st.rerun()
-                            with col_no:
-                                if st.button("取消", key=f"confirm_no_insulin_{idx}"):
-                                    del st.session_state[f"confirm_delete_insulin_{idx}"]
-                                    st.rerun()
+                    
+                    # Show confirmation dialog if needed
+                    if st.session_state.get(f"confirm_delete_insulin_{idx}", False):
+                        st.warning("确定要删除此胰岛素记录吗？")
+                        col_yes, col_no = st.columns(2)
+                        with col_yes:
+                            if st.button("确定删除", key=f"confirm_yes_insulin_{idx}", type="primary"):
+                                st.session_state.glucose_data = st.session_state.glucose_data.drop(idx).reset_index(drop=True)
+                                save_persistent_data()
+                                del st.session_state[f"confirm_delete_insulin_{idx}"]
+                                st.success("胰岛素记录已删除")
+                                st.rerun()
+                        with col_no:
+                            if st.button("取消", key=f"confirm_no_insulin_{idx}"):
+                                del st.session_state[f"confirm_delete_insulin_{idx}"]
+                                st.rerun()
                 
                 # Insulin statistics
                 col1, col2, col3, col4 = st.columns(4)
@@ -2371,57 +2317,30 @@ else:
                     # Create layout with functional delete button
                     food_details = row['food_details'] if pd.notna(row['food_details']) and row['food_details'] else '未记录详情'
                     
-                    # Create exact layout match with daily summary using columns and custom CSS
-                    col1, col2 = st.columns([0.88, 0.12])
-                    
+                    # Create inline layout with simple columns
+                    col1, col2 = st.columns([0.9, 0.1])
                     with col1:
-                        st.markdown(f"""
-                        <div style="display: flex; align-items: center; margin-bottom: 5px; padding-top: 8px;">
-                            <span><strong>{row['timestamp'].strftime('%Y-%m-%d %H:%M')}</strong> | {row['carbs']:.1f}g</span>
-                        </div>
-                        """, unsafe_allow_html=True)
-                    
+                        st.write(f"**{row['timestamp'].strftime('%Y-%m-%d %H:%M')}** | {row['carbs']:.1f}g")
                     with col2:
-                        st.markdown("""
-                        <style>
-                        .stButton > button {
-                            background: #ff4b4b !important;
-                            color: white !important;
-                            border: none !important;
-                            border-radius: 4px !important;
-                            padding: 4px 8px !important;
-                            font-size: 12px !important;
-                            cursor: pointer !important;
-                            height: 32px !important;
-                            min-height: 32px !important;
-                            width: 32px !important;
-                            margin-top: 8px !important;
-                        }
-                        .stButton > button:hover {
-                            background: #e03e3e !important;
-                        }
-                        </style>
-                        """, unsafe_allow_html=True)
-                        
                         if st.button("×", key=f"delete_meal_{idx}"):
                             # Set confirmation state
                             st.session_state[f"confirm_delete_meal_{idx}"] = True
-                        
-                        # Show confirmation dialog if needed
-                        if st.session_state.get(f"confirm_delete_meal_{idx}", False):
-                            st.warning("确定要删除此饮食记录吗？")
-                            col_yes, col_no = st.columns(2)
-                            with col_yes:
-                                if st.button("确定删除", key=f"confirm_yes_meal_{idx}", type="primary"):
-                                    st.session_state.glucose_data = st.session_state.glucose_data.drop(idx).reset_index(drop=True)
-                                    save_persistent_data()
-                                    del st.session_state[f"confirm_delete_meal_{idx}"]
-                                    st.success("饮食记录已删除")
-                                    st.rerun()
-                            with col_no:
-                                if st.button("取消", key=f"confirm_no_meal_{idx}"):
-                                    del st.session_state[f"confirm_delete_meal_{idx}"]
-                                    st.rerun()
+                    
+                    # Show confirmation dialog if needed
+                    if st.session_state.get(f"confirm_delete_meal_{idx}", False):
+                        st.warning("确定要删除此饮食记录吗？")
+                        col_yes, col_no = st.columns(2)
+                        with col_yes:
+                            if st.button("确定删除", key=f"confirm_yes_meal_{idx}", type="primary"):
+                                st.session_state.glucose_data = st.session_state.glucose_data.drop(idx).reset_index(drop=True)
+                                save_persistent_data()
+                                del st.session_state[f"confirm_delete_meal_{idx}"]
+                                st.success("饮食记录已删除")
+                                st.rerun()
+                        with col_no:
+                            if st.button("取消", key=f"confirm_no_meal_{idx}"):
+                                del st.session_state[f"confirm_delete_meal_{idx}"]
+                                st.rerun()
                     
                     # Second line: food details
                     st.caption(f"  → {food_details}")
