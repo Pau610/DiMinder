@@ -2250,20 +2250,24 @@ else:
                     # Create truly inline layout using HTML
                     food_details = row['food_details'] if pd.notna(row['food_details']) and row['food_details'] else '未记录详情'
                     
-                    # First line with datetime, carbs and delete button using columns
-                    col1, col2 = st.columns([8.5, 0.5])
-                    with col1:
-                        # Use HTML for true inline text
-                        st.markdown(f"""
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <span style="font-size: 14px;">{row['timestamp'].strftime('%Y-%m-%d %H:%M')} | {row['carbs']:.1f}g</span>
-                        </div>
-                        """, unsafe_allow_html=True)
-                    with col2:
-                        if st.button("×", key=f"delete_meal_{idx}", help="删除记录"):
-                            if f"confirm_delete_meal_{idx}" not in st.session_state:
-                                st.session_state[f"confirm_delete_meal_{idx}"] = True
-                                st.rerun()
+                    # Create single HTML component with true inline layout
+                    components.html(f"""
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px;">
+                        <span style="font-size: 14px; color: #262730;">{row['timestamp'].strftime('%Y-%m-%d %H:%M')} | {row['carbs']:.1f}g</span>
+                        <button onclick="if(confirm('确认删除此饮食记录？')) {{
+                                    window.parent.postMessage({{type: 'streamlit_delete', idx: '{idx}'}}, '*');
+                                }}" 
+                                style="background: #ff4b4b; color: white; border: none; 
+                                       border-radius: 3px; padding: 3px 7px; font-size: 12px; 
+                                       cursor: pointer; margin-left: 10px;">×</button>
+                    </div>
+                    """, height=30)
+                    
+                    # Hidden Streamlit button for actual deletion
+                    if st.button(f"确认删除_{idx}", key=f"delete_meal_{idx}"):
+                        if f"confirm_delete_meal_{idx}" not in st.session_state:
+                            st.session_state[f"confirm_delete_meal_{idx}"] = True
+                            st.rerun()
                     
                     # Second line: food details
                     st.caption(f"  → {food_details}")
