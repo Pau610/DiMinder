@@ -1073,23 +1073,43 @@ if st.session_state.input_type == 'glucose':
         </div>
         <script>
             function updateGlucoseTime(value) {{
-                window.parent.postMessage({{
-                    type: 'glucose_time_update',
-                    value: value
-                }}, '*');
+                // Store the raw input value
+                window.glucoseTimeRawInput = value;
+                
+                // Auto-format the time as user types
+                if (value && value.length >= 3) {{
+                    let formatted = formatTimeInput(value);
+                    if (formatted !== value) {{
+                        document.getElementById('glucose_time_input_custom').value = formatted;
+                        window.glucoseTimeRawInput = formatted;
+                    }}
+                }}
+            }}
+            
+            function formatTimeInput(input) {{
+                // Remove any non-digit characters except colon
+                let cleaned = input.replace(/[^0-9:]/g, '');
+                
+                // Handle 4-digit format (1430 -> 14:30)
+                if (cleaned.length === 4 && !cleaned.includes(':')) {{
+                    return cleaned.substring(0, 2) + ':' + cleaned.substring(2);
+                }}
+                
+                // Handle 3-digit format (930 -> 09:30)
+                if (cleaned.length === 3 && !cleaned.includes(':')) {{
+                    return '0' + cleaned.substring(0, 1) + ':' + cleaned.substring(1);
+                }}
+                
+                return cleaned;
             }}
             
             function clearGlucoseTime() {{
                 document.getElementById('glucose_time_input_custom').value = '';
-                updateGlucoseTime('');
+                window.glucoseTimeRawInput = '';
             }}
             
-            // Listen for updates from Streamlit
-            window.addEventListener('message', function(event) {{
-                if (event.data.type === 'glucose_time_set') {{
-                    document.getElementById('glucose_time_input_custom').value = event.data.value;
-                }}
-            }});
+            // Initialize the stored value
+            window.glucoseTimeRawInput = '{st.session_state.glucose_time_state}';
         </script>
         """, height=80)
         
@@ -1192,16 +1212,43 @@ elif st.session_state.input_type == 'meal':
         </div>
         <script>
             function updateMealTime(value) {{
-                window.parent.postMessage({{
-                    type: 'meal_time_update',
-                    value: value
-                }}, '*');
+                // Store the raw input value
+                window.mealTimeRawInput = value;
+                
+                // Auto-format the time as user types
+                if (value && value.length >= 3) {{
+                    let formatted = formatTimeInput(value);
+                    if (formatted !== value) {{
+                        document.getElementById('meal_time_input_custom').value = formatted;
+                        window.mealTimeRawInput = formatted;
+                    }}
+                }}
+            }}
+            
+            function formatTimeInput(input) {{
+                // Remove any non-digit characters except colon
+                let cleaned = input.replace(/[^0-9:]/g, '');
+                
+                // Handle 4-digit format (1430 -> 14:30)
+                if (cleaned.length === 4 && !cleaned.includes(':')) {{
+                    return cleaned.substring(0, 2) + ':' + cleaned.substring(2);
+                }}
+                
+                // Handle 3-digit format (930 -> 09:30)
+                if (cleaned.length === 3 && !cleaned.includes(':')) {{
+                    return '0' + cleaned.substring(0, 1) + ':' + cleaned.substring(1);
+                }}
+                
+                return cleaned;
             }}
             
             function clearMealTime() {{
                 document.getElementById('meal_time_input_custom').value = '';
-                updateMealTime('');
+                window.mealTimeRawInput = '';
             }}
+            
+            // Initialize the stored value
+            window.mealTimeRawInput = '{st.session_state.meal_time_state}';
         </script>
         """, height=80)
         
@@ -1346,16 +1393,43 @@ elif st.session_state.input_type == 'insulin':
         </div>
         <script>
             function updateInjectionTime(value) {{
-                window.parent.postMessage({{
-                    type: 'injection_time_update',
-                    value: value
-                }}, '*');
+                // Store the raw input value
+                window.injectionTimeRawInput = value;
+                
+                // Auto-format the time as user types
+                if (value && value.length >= 3) {{
+                    let formatted = formatTimeInput(value);
+                    if (formatted !== value) {{
+                        document.getElementById('injection_time_input_custom').value = formatted;
+                        window.injectionTimeRawInput = formatted;
+                    }}
+                }}
+            }}
+            
+            function formatTimeInput(input) {{
+                // Remove any non-digit characters except colon
+                let cleaned = input.replace(/[^0-9:]/g, '');
+                
+                // Handle 4-digit format (1430 -> 14:30)
+                if (cleaned.length === 4 && !cleaned.includes(':')) {{
+                    return cleaned.substring(0, 2) + ':' + cleaned.substring(2);
+                }}
+                
+                // Handle 3-digit format (930 -> 09:30)
+                if (cleaned.length === 3 && !cleaned.includes(':')) {{
+                    return '0' + cleaned.substring(0, 1) + ':' + cleaned.substring(1);
+                }}
+                
+                return cleaned;
             }}
             
             function clearInjectionTime() {{
                 document.getElementById('injection_time_input_custom').value = '';
-                updateInjectionTime('');
+                window.injectionTimeRawInput = '';
             }}
+            
+            // Initialize the stored value
+            window.injectionTimeRawInput = '{st.session_state.injection_time_state}';
         </script>
         """, height=80)
         
