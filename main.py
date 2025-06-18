@@ -91,17 +91,77 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-// Enhanced Local Storage with IndexedDB for PWA
+// Enhanced Local Storage with IndexedDB for PWA - Version Safe
 class PWADiabetesStorage {
     constructor() {
         this.storageKey = 'diabetes_diary_data';
         this.backupKey = 'diabetes_diary_backup';
+        this.versionKey = 'diabetes_app_version';
+        this.migrationKey = 'diabetes_migration_backup';
         this.dbName = 'DiabetesDiaryDB';
-        this.dbVersion = 1;
+        this.dbVersion = 2;
+        this.currentAppVersion = '2.1.0';
         this.db = null;
-        this.initIndexedDB();
+        this.initVersionSafeStorage();
     }
     
+    // Initialize version-safe storage system
+    async initVersionSafeStorage() {
+        await this.checkVersionAndMigrate();
+        await this.initIndexedDB();
+    }
+
+    // Check app version and protect user data during updates
+    async checkVersionAndMigrate() {
+        const savedVersion = localStorage.getItem(this.versionKey);
+        
+        if (!savedVersion) {
+            // First time installation
+            localStorage.setItem(this.versionKey, this.currentAppVersion);
+            console.log('First installation - version tracking initialized');
+            return;
+        }
+        
+        if (savedVersion !== this.currentAppVersion) {
+            console.log(`App version updated from ${savedVersion} to ${this.currentAppVersion}`);
+            await this.protectDataDuringUpdate(savedVersion);
+            localStorage.setItem(this.versionKey, this.currentAppVersion);
+        }
+    }
+
+    // Protect user data during version updates
+    async protectDataDuringUpdate(oldVersion) {
+        try {
+            // Create timestamped backup before any update
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            const backupKey = `${this.migrationKey}_${oldVersion}_${timestamp}`;
+            
+            // Backup localStorage data
+            const currentData = localStorage.getItem(this.storageKey);
+            if (currentData) {
+                localStorage.setItem(backupKey, currentData);
+                console.log(`Data backed up to ${backupKey} before version update`);
+            }
+            
+            // Backup IndexedDB data
+            if (this.db) {
+                const indexedData = await this.loadFromIndexedDB();
+                if (indexedData && indexedData.length > 0) {
+                    localStorage.setItem(`${backupKey}_indexed`, JSON.stringify(indexedData));
+                    console.log('IndexedDB data backed up before version update');
+                }
+            }
+            
+            // Mark as migration-protected
+            localStorage.setItem('migration_protected', 'true');
+            localStorage.setItem('migration_timestamp', timestamp);
+            
+        } catch (error) {
+            console.error('Error protecting data during update:', error);
+            // Even if backup fails, don't block the update
+        }
+    }
+
     // Initialize IndexedDB for offline storage
     async initIndexedDB() {
         try {
@@ -222,31 +282,132 @@ class PWADiabetesStorage {
         }
     }
     
-    // Load data from IndexedDB or localStorage
+    // Load data with version-safe recovery
     async loadData() {
         try {
-            // Try IndexedDB first
-            if (this.db && !this.useLocalStorageOnly) {
-                const indexedData = await this.loadFromIndexedDB();
-                if (indexedData && indexedData.length > 0) {
-                    return indexedData;
+            // Check if migration protection is needed
+            const isMigrationProtected = localStorage.getItem('migration_protected') === 'true';
+            
+            if (isMigrationProtected) {
+                console.log('Loading data with migration protection active');
+                return await this.loadDataWithMigrationProtection();
+            }
+            
+            // Normal data loading
+            return await this.loadDataNormal();
+            
+        } catch (error) {
+            console.error('Error loading data:', error);
+            return await this.recoverDataFromBackups();
+        }
+    }
+
+    // Load data with migration protection
+    async loadDataWithMigrationProtection() {
+        // Try IndexedDB first
+        if (this.db && !this.useLocalStorageOnly) {
+            const indexedData = await this.loadFromIndexedDB();
+            if (indexedData && indexedData.length > 0) {
+                return indexedData;
+            }
+        }
+        
+        // Try main storage
+        const data = localStorage.getItem(this.storageKey);
+        if (data) {
+            return JSON.parse(data);
+        }
+        
+        // If main storage is empty, recover from migration backups
+        return await this.recoverFromMigrationBackups();
+    }
+
+    // Normal data loading (no migration protection needed)
+    async loadDataNormal() {
+        // Try IndexedDB first
+        if (this.db && !this.useLocalStorageOnly) {
+            const indexedData = await this.loadFromIndexedDB();
+            if (indexedData && indexedData.length > 0) {
+                return indexedData;
+            }
+        }
+        
+        // Fallback to localStorage
+        const data = localStorage.getItem(this.storageKey);
+        if (data) {
+            return JSON.parse(data);
+        }
+        
+        const backupData = localStorage.getItem(this.backupKey);
+        if (backupData) {
+            return JSON.parse(backupData);
+        }
+        
+        return null;
+    }
+
+    // Recover data from migration backups
+    async recoverFromMigrationBackups() {
+        try {
+            // Find the most recent migration backup
+            const allKeys = Object.keys(localStorage);
+            const migrationBackups = allKeys.filter(key => key.startsWith(this.migrationKey));
+            
+            if (migrationBackups.length > 0) {
+                // Sort by timestamp and get the most recent
+                migrationBackups.sort().reverse();
+                const latestBackup = migrationBackups[0];
+                
+                console.log(`Recovering data from migration backup: ${latestBackup}`);
+                const backupData = localStorage.getItem(latestBackup);
+                
+                if (backupData) {
+                    const recoveredData = JSON.parse(backupData);
+                    
+                    // Restore to main storage
+                    localStorage.setItem(this.storageKey, backupData);
+                    console.log('Data successfully recovered from migration backup');
+                    
+                    return recoveredData;
                 }
-            }
-            
-            // Fallback to localStorage
-            const data = localStorage.getItem(this.storageKey);
-            if (data) {
-                return JSON.parse(data);
-            }
-            
-            const backupData = localStorage.getItem(this.backupKey);
-            if (backupData) {
-                return JSON.parse(backupData);
             }
             
             return null;
         } catch (error) {
-            console.error('Error loading data:', error);
+            console.error('Error recovering from migration backups:', error);
+            return null;
+        }
+    }
+
+    // Recover data from any available backups
+    async recoverDataFromBackups() {
+        try {
+            console.log('Attempting data recovery from all available backups');
+            
+            // Try migration backups first
+            const migrationData = await this.recoverFromMigrationBackups();
+            if (migrationData) return migrationData;
+            
+            // Try regular backup
+            const backupData = localStorage.getItem(this.backupKey);
+            if (backupData) {
+                console.log('Recovered data from regular backup');
+                return JSON.parse(backupData);
+            }
+            
+            // Try IndexedDB backup
+            if (this.db) {
+                const indexedData = await this.loadFromIndexedDB();
+                if (indexedData && indexedData.length > 0) {
+                    console.log('Recovered data from IndexedDB');
+                    return indexedData;
+                }
+            }
+            
+            console.log('No backup data found for recovery');
+            return null;
+        } catch (error) {
+            console.error('Error in data recovery:', error);
             return null;
         }
     }
@@ -302,17 +463,95 @@ class PWADiabetesStorage {
         return navigator.onLine;
     }
     
-    // Get storage info
+    // Get storage info with version safety details
     async getStorageInfo() {
         const data = await this.loadData();
+        const backupInfo = this.getBackupInfo();
+        
         return {
             hasData: !!(data && data.length > 0),
             dataSize: data ? JSON.stringify(data).length : 0,
             recordCount: data ? data.length : 0,
             lastModified: new Date().toISOString(),
             isOnline: this.isOnline(),
-            storageType: this.useLocalStorageOnly ? 'localStorage' : 'IndexedDB'
+            storageType: this.useLocalStorageOnly ? 'localStorage' : 'IndexedDB',
+            appVersion: this.currentAppVersion,
+            migrationProtected: localStorage.getItem('migration_protected') === 'true',
+            backupCount: backupInfo.migration_backups + (backupInfo.regular_backup_exists ? 1 : 0)
         };
+    }
+
+    // Get backup information for export and status
+    getBackupInfo() {
+        const allKeys = Object.keys(localStorage);
+        const migrationBackups = allKeys.filter(key => key.startsWith(this.migrationKey));
+        
+        return {
+            migration_backups: migrationBackups.length,
+            latest_migration: migrationBackups.length > 0 ? migrationBackups.sort().reverse()[0] : null,
+            regular_backup_exists: !!localStorage.getItem(this.backupKey),
+            storage_version: this.dbVersion,
+            protected_since: localStorage.getItem('migration_timestamp')
+        };
+    }
+
+    // Enhanced export with version-safe backup information
+    async exportData() {
+        try {
+            const data = await this.loadData();
+            if (!data || data.length === 0) {
+                console.log('No data available for export');
+                return false;
+            }
+            
+            // Include version and backup information in export
+            const exportData = {
+                exported_at: new Date().toISOString(),
+                app_version: this.currentAppVersion,
+                timezone: 'Asia/Shanghai',
+                export_type: 'version_safe_backup',
+                migration_protected: localStorage.getItem('migration_protected') === 'true',
+                data_count: data.length,
+                data: data,
+                backup_info: this.getBackupInfo()
+            };
+            
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `diabetes_backup_v${this.currentAppVersion}_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            console.log('Version-safe data export completed');
+            return true;
+        } catch (error) {
+            console.error('Error exporting data:', error);
+            return false;
+        }
+    }
+
+    // Clean old migration backups (keep only last 3)
+    cleanOldMigrationBackups() {
+        try {
+            const allKeys = Object.keys(localStorage);
+            const migrationBackups = allKeys.filter(key => key.startsWith(this.migrationKey));
+            
+            if (migrationBackups.length > 3) {
+                migrationBackups.sort();
+                const toRemove = migrationBackups.slice(0, migrationBackups.length - 3);
+                
+                toRemove.forEach(key => {
+                    localStorage.removeItem(key);
+                    console.log(`Cleaned old migration backup: ${key}`);
+                });
+            }
+        } catch (error) {
+            console.error('Error cleaning old backups:', error);
+        }
     }
 }
 
@@ -1140,24 +1379,45 @@ elif st.session_state.input_type == 'insulin':
         
     st.info("💡 独立离线应用，所有数据保存在您的设备本地，完全离线可用，隐私安全")
     
-    # Display offline app status
+    # Display version-safe status
     components.html("""
-    <div id="offline-app-status"></div>
+    <div id="version-safe-status"></div>
     <script>
-        function showOfflineAppStatus() {
-            const statusDiv = document.getElementById('offline-app-status');
-            statusDiv.innerHTML = `
+        function showVersionSafeStatus() {
+            const appVersion = localStorage.getItem('diabetes_app_version');
+            const isMigrationProtected = localStorage.getItem('migration_protected') === 'true';
+            const migrationTimestamp = localStorage.getItem('migration_timestamp');
+            
+            const statusDiv = document.getElementById('version-safe-status');
+            
+            let statusHtml = `
                 <div style="background: linear-gradient(135deg, #e8f5e8, #d4edda); 
                            padding: 10px; border-radius: 8px; margin: 10px 0; 
                            border-left: 4px solid #28a745;">
                     🏠 <strong>纯离线应用模式</strong> - 所有数据完全保存在您的设备本地
-                </div>
+                    <br><small>当前版本: ${appVersion || '未知'}</small>
             `;
+            
+            if (isMigrationProtected && migrationTimestamp) {
+                const backupTime = new Date(migrationTimestamp.replace(/-/g, ':')).toLocaleString('zh-CN');
+                statusHtml += `
+                    <br>
+                    <div style="margin-top: 8px; padding: 6px; background: rgba(255, 193, 7, 0.2); border-radius: 4px;">
+                        🛡️ <strong>版本更新保护激活</strong> - 数据已在 ${backupTime} 自动备份
+                    </div>
+                `;
+            }
+            
+            statusHtml += '</div>';
+            statusDiv.innerHTML = statusHtml;
         }
         
-        showOfflineAppStatus();
+        showVersionSafeStatus();
+        
+        // Update status periodically
+        setInterval(showVersionSafeStatus, 5000);
     </script>
-    """, height=60)
+    """, height=80)
 
 # 血糖预警系统 (显著位置)
 if not st.session_state.glucose_data.empty:
