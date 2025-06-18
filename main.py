@@ -2263,30 +2263,8 @@ else:
                     </div>
                     """, height=30)
                     
-                    # Hidden Streamlit button for actual deletion
-                    if st.button(f"确认删除_{idx}", key=f"delete_meal_{idx}"):
-                        if f"confirm_delete_meal_{idx}" not in st.session_state:
-                            st.session_state[f"confirm_delete_meal_{idx}"] = True
-                            st.rerun()
-                    
                     # Second line: food details
                     st.caption(f"  → {food_details}")
-                            
-                    # Confirmation dialog
-                    if f"confirm_delete_meal_{idx}" in st.session_state:
-                        st.warning(f"确认删除 {row['timestamp'].strftime('%Y-%m-%d %H:%M')} 的饮食记录？")
-                        col_yes, col_no = st.columns(2)
-                        with col_yes:
-                            if st.button("确认删除", key=f"confirm_meal_yes_{idx}"):
-                                st.session_state.glucose_data = st.session_state.glucose_data.drop(idx).reset_index(drop=True)
-                                save_persistent_data()
-                                del st.session_state[f"confirm_delete_meal_{idx}"]
-                                st.success("记录已删除")
-                                st.rerun()
-                        with col_no:
-                            if st.button("取消", key=f"confirm_meal_no_{idx}"):
-                                del st.session_state[f"confirm_delete_meal_{idx}"]
-                                st.rerun()
                 
                 # Add daily summary statistics
                 col1, col2, col3 = st.columns(3)
