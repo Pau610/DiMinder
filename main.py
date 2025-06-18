@@ -2247,22 +2247,19 @@ else:
                 meal_records = meal_data.head(30)
                 
                 for idx, row in meal_records.iterrows():
-                    col1, col2, col3, col4, col5 = st.columns([2, 1, 4, 1.5, 1])
-                    
+                    # First line: date, time, and total carbs
+                    col1, col2 = st.columns([8, 1])
                     with col1:
-                        st.write(f"{row['timestamp'].strftime('%Y-%m-%d')}")
+                        st.write(f"{row['timestamp'].strftime('%Y-%m-%d %H:%M')} | {row['carbs']:.1f}g")
                     with col2:
-                        st.write(f"{row['timestamp'].strftime('%H:%M')}")
-                    with col3:
-                        food_details = row['food_details'] if pd.notna(row['food_details']) and row['food_details'] else '未记录详情'
-                        st.write(food_details)
-                    with col4:
-                        st.write(f"{row['carbs']:.1f}g")
-                    with col5:
                         if st.button("🗑️", key=f"delete_meal_{idx}", help="删除记录"):
                             if f"confirm_delete_meal_{idx}" not in st.session_state:
                                 st.session_state[f"confirm_delete_meal_{idx}"] = True
                                 st.rerun()
+                    
+                    # Second line: food details
+                    food_details = row['food_details'] if pd.notna(row['food_details']) and row['food_details'] else '未记录详情'
+                    st.caption(f"  → {food_details}")
                             
                     # Confirmation dialog
                     if f"confirm_delete_meal_{idx}" in st.session_state:
