@@ -1303,7 +1303,7 @@ elif st.session_state.input_type == 'meal':
     with col_add:
         st.write("")  # 空行对齐
         if st.button("➕", key="add_food_btn", help="添加食物"):
-            if food_name and carbs_amount is not None and carbs_amount > 0:
+            if food_name and carbs_amount is not None and carbs_amount >= 0:
                 st.session_state.meal_foods.append({
                     'food': food_name,
                     'carbs': carbs_amount
