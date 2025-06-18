@@ -970,16 +970,11 @@ with col1:
             daily_summary = generate_daily_summary(selected_date)
             
             if daily_summary:
-                col_summary, col_copy = st.columns([5, 1])
-                with col_summary:
-                    st.text_area(
-                        "每日摘要 (可复制)",
-                        value=daily_summary,
-                        height=200,
-                        key="daily_summary_text"
-                    )
+                # Header with inline copy button
+                col_header, col_copy = st.columns([4, 1])
+                with col_header:
+                    st.subheader("每日摘要 (可复制)")
                 with col_copy:
-                    st.write("")  # Add spacing
                     if st.button("📋 复制", key="copy_summary_btn", help="复制每日摘要到剪贴板"):
                         # Prepare text for JavaScript (escape special characters)
                         escaped_summary = daily_summary.replace('`', '\\`').replace('$', '\\$').replace('\\', '\\\\').replace('\n', '\\n').replace('\r', '\\r')
@@ -1005,6 +1000,15 @@ with col1:
                         </script>
                         """, height=0)
                         st.success("已复制到剪贴板！")
+                
+                # Summary text area without label
+                st.text_area(
+                    label="",
+                    value=daily_summary,
+                    height=200,
+                    key="daily_summary_text",
+                    label_visibility="collapsed"
+                )
             else:
                 st.info("选择的日期没有记录")
         else:
