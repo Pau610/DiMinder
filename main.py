@@ -303,7 +303,7 @@ def save_persistent_data():
                 # Save to localStorage for mobile app transfer
                 try:
                     data_json = st.session_state.glucose_data.to_json(orient='records', date_format='iso')
-                    st.components.v1.html(f"""
+                    components.html(f"""
                     <script>
                         try {{
                             if (window.diabetesStorage) {{
@@ -787,7 +787,7 @@ with st.sidebar:
     st.subheader("📱 移动应用数据传输")
     
     # Storage status indicator
-    st.components.v1.html("""
+    components.html("""
     <script>
         if (window.diabetesStorage) {
             const info = window.diabetesStorage.getStorageInfo();
@@ -808,7 +808,7 @@ with st.sidebar:
     
     with col1:
         if st.button("📤 导出数据", use_container_width=True, help="下载JSON文件用于iOS应用导入"):
-            st.components.v1.html("""
+            components.html("""
             <script>
                 if (window.exportForMobile) {
                     window.exportForMobile();
