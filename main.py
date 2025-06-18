@@ -867,8 +867,11 @@ def generate_daily_summary(selected_date):
             insulin_dose = int(row['insulin']) if float(row['insulin']).is_integer() else row['insulin']
             summary_lines.append(f" {time_str} => {insulin_dose}U {row['insulin_type']}")
         
-        # Meal record
-        if row['carbs'] >= 0 and row['food_details']:
+        # Meal record - only show if there are actual food details and valid carbs
+        if (pd.notna(row['food_details']) and 
+            str(row['food_details']).strip() and 
+            row['food_details'] != '' and
+            pd.notna(row['carbs'])):
             carbs_total = int(row['carbs']) if float(row['carbs']).is_integer() else row['carbs']
             summary_lines.append(f" {time_str} => {row['food_details']} [{carbs_total}g]")
     
@@ -982,7 +985,32 @@ with col1:
         st.info("暂无数据可显示摘要")
 
 with col2:
-    pass
+    st.markdown("**最近记录**")
+    if not st.session_state.glucose_data.empty:
+        recent_data = st.session_state.glucose_data.tail(5).copy()
+        recent_data['timestamp'] = pd.to_datetime(recent_data['timestamp'])
+        recent_data = recent_data.sort_values('timestamp', ascending=False)
+        
+        for _, row in recent_data.iterrows():
+            time_str = row['timestamp'].strftime('%m-%d %H:%M')
+            record_type = []
+            
+            if row['glucose_level'] > 0:
+                glucose_mmol = round(row['glucose_level'] / 18.0182, 1)
+                record_type.append(f"血糖 {glucose_mmol}")
+            
+            if row['insulin'] > 0:
+                insulin_dose = int(row['insulin']) if float(row['insulin']).is_integer() else row['insulin']
+                record_type.append(f"胰岛素 {insulin_dose}U")
+            
+            if pd.notna(row['food_details']) and str(row['food_details']).strip():
+                carbs_total = int(row['carbs']) if float(row['carbs']).is_integer() else row['carbs']
+                record_type.append(f"餐食 {carbs_total}g")
+            
+            if record_type:
+                st.caption(f"{time_str}: {', '.join(record_type)}")
+    else:
+        st.caption("暂无记录")
 
 # Manual Data Entry Section
 st.markdown("### 📝 数据录入")
