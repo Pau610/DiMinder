@@ -1093,20 +1093,12 @@ if st.session_state.input_type == 'glucose':
         </script>
         """, height=80)
         
-        # Hidden input to capture the value
-        time_input_str = st.text_input(
-            "glucose_time_hidden",
-            value=st.session_state.glucose_time_state,
-            label_visibility="hidden",
-            key="glucose_time_input"
-        )
-        
         # Parse the time input and update state
-        record_time = parse_time_input(time_input_str)
+        record_time = parse_time_input(st.session_state.glucose_time_state)
         st.session_state.glucose_time_state = record_time.strftime("%H:%M")
         
         # Display parsed time for confirmation
-        if time_input_str:
+        if st.session_state.glucose_time_state:
             st.caption(f"解析时间: {record_time.strftime('%H:%M')}")
 
     glucose_mmol = st.number_input("血糖水平 (mmol/L)", min_value=2.0, max_value=22.0, value=None, step=0.1, key="glucose_level", placeholder="请输入血糖值")
@@ -1213,20 +1205,12 @@ elif st.session_state.input_type == 'meal':
         </script>
         """, height=80)
         
-        # Hidden input to capture the value
-        meal_time_input_str = st.text_input(
-            "meal_time_hidden",
-            value=st.session_state.meal_time_state,
-            label_visibility="hidden",
-            key="meal_time_input"
-        )
-        
         # Parse the time input and update state
-        meal_time = parse_time_input(meal_time_input_str)
+        meal_time = parse_time_input(st.session_state.meal_time_state)
         st.session_state.meal_time_state = meal_time.strftime("%H:%M")
         
         # Display parsed time for confirmation
-        if meal_time_input_str:
+        if st.session_state.meal_time_state:
             st.caption(f"解析时间: {meal_time.strftime('%H:%M')}")
 
     # 初始化食物列表
@@ -1375,20 +1359,12 @@ elif st.session_state.input_type == 'insulin':
         </script>
         """, height=80)
         
-        # Hidden input to capture the value
-        injection_time_input_str = st.text_input(
-            "injection_time_hidden",
-            value=st.session_state.injection_time_state,
-            label_visibility="hidden",
-            key="injection_time_input"
-        )
-        
         # Parse the time input and update state
-        injection_time = parse_time_input(injection_time_input_str)
+        injection_time = parse_time_input(st.session_state.injection_time_state)
         st.session_state.injection_time_state = injection_time.strftime("%H:%M")
         
         # Display parsed time for confirmation
-        if injection_time_input_str:
+        if st.session_state.injection_time_state:
             st.caption(f"解析时间: {injection_time.strftime('%H:%M')}")
 
     # 注射部位选择
