@@ -489,10 +489,7 @@ with col1:
         st.info("暂无数据可显示摘要")
 
 with col2:
-    st.markdown("**使用说明:**")
-    st.markdown("- 选择日期查看当日所有记录")
-    st.markdown("- 可直接复制摘要文本")
-    st.markdown("- 格式: 时间 => 记录内容")
+    pass
 
 st.markdown("---")
 
