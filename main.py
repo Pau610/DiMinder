@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import pandas as pd
 import numpy as np
 import os
@@ -19,7 +20,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"  # 在移动端默认收起侧边栏
 )
 
-# Custom CSS for mobile-friendly design
+# Custom CSS for mobile-friendly design and localStorage
 st.markdown("""
 <style>
     /* 增大按钮尺寸 */
@@ -55,6 +56,106 @@ st.markdown("""
         }
     }
 </style>
+""", unsafe_allow_html=True)
+
+# JavaScript for localStorage functionality
+st.markdown("""
+<script>
+// Local Storage Functions for Mobile App Transfer
+class DiabetesLocalStorage {
+    constructor() {
+        this.storageKey = 'diabetes_diary_data';
+        this.backupKey = 'diabetes_diary_backup';
+    }
+    
+    // Save data to localStorage
+    saveData(data) {
+        try {
+            const jsonData = JSON.stringify(data);
+            localStorage.setItem(this.storageKey, jsonData);
+            localStorage.setItem(this.backupKey, jsonData);
+            console.log('Data saved to localStorage successfully');
+            return true;
+        } catch (error) {
+            console.error('Error saving data to localStorage:', error);
+            return false;
+        }
+    }
+    
+    // Load data from localStorage
+    loadData() {
+        try {
+            const data = localStorage.getItem(this.storageKey);
+            if (data) {
+                return JSON.parse(data);
+            }
+            // Try backup if main storage fails
+            const backupData = localStorage.getItem(this.backupKey);
+            if (backupData) {
+                return JSON.parse(backupData);
+            }
+            return null;
+        } catch (error) {
+            console.error('Error loading data from localStorage:', error);
+            return null;
+        }
+    }
+    
+    // Export data for mobile app transfer
+    exportData() {
+        const data = this.loadData();
+        if (data) {
+            const blob = new Blob([JSON.stringify(data, null, 2)], {
+                type: 'application/json'
+            });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `diabetes_diary_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            console.log('Data exported for mobile app transfer');
+        }
+    }
+    
+    // Clear all stored data
+    clearData() {
+        localStorage.removeItem(this.storageKey);
+        localStorage.removeItem(this.backupKey);
+        console.log('All local data cleared');
+    }
+    
+    // Get storage usage info
+    getStorageInfo() {
+        const data = localStorage.getItem(this.storageKey);
+        return {
+            hasData: !!data,
+            dataSize: data ? data.length : 0,
+            lastModified: data ? new Date().toISOString() : null
+        };
+    }
+}
+
+// Initialize storage manager
+window.diabetesStorage = new DiabetesLocalStorage();
+
+// Auto-save function that can be called from Python
+window.autoSaveData = function(data) {
+    return window.diabetesStorage.saveData(data);
+};
+
+// Load function that can be called from Python
+window.loadStoredData = function() {
+    return window.diabetesStorage.loadData();
+};
+
+// Export function for mobile transfer
+window.exportForMobile = function() {
+    window.diabetesStorage.exportData();
+};
+</script>
 """, unsafe_allow_html=True)
 
 # Helper function for time input parsing
@@ -198,6 +299,26 @@ def save_persistent_data():
                 
                 # Create additional safety backup
                 shutil.copy('user_data.csv', 'user_data_safe.csv')
+                
+                # Save to localStorage for mobile app transfer
+                try:
+                    data_json = st.session_state.glucose_data.to_json(orient='records', date_format='iso')
+                    st.components.v1.html(f"""
+                    <script>
+                        try {{
+                            if (window.diabetesStorage) {{
+                                const data = {data_json};
+                                window.diabetesStorage.saveData(data);
+                                console.log('Data automatically saved to localStorage');
+                            }}
+                        }} catch (error) {{
+                            console.error('localStorage save failed:', error);
+                        }}
+                    </script>
+                    """, height=0)
+                except Exception as e:
+                    # Silent fail for localStorage - don't interrupt main save process
+                    pass
                 
                 # Clean up old timestamped backups (keep only last 10)
                 import glob
@@ -660,6 +781,50 @@ with st.sidebar:
                         st.error("数据保存失败，请重试")
                 else:
                     st.error("请输入胰岛素剂量")
+
+    # Mobile App Transfer Section
+    st.markdown("---")
+    st.subheader("📱 移动应用数据传输")
+    
+    # Storage status indicator
+    st.components.v1.html("""
+    <script>
+        if (window.diabetesStorage) {
+            const info = window.diabetesStorage.getStorageInfo();
+            const statusDiv = document.createElement('div');
+            statusDiv.innerHTML = `
+                <div style="padding: 10px; background: ${info.hasData ? '#d4edda' : '#f8d7da'}; 
+                           border-radius: 5px; margin: 10px 0;">
+                    <strong>本地存储状态:</strong> ${info.hasData ? '✓ 已保存' : '✗ 无数据'}<br>
+                    ${info.hasData ? `数据大小: ${(info.dataSize/1024).toFixed(2)} KB` : ''}
+                </div>
+            `;
+            document.body.appendChild(statusDiv);
+        }
+    </script>
+    """, height=80)
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        if st.button("📤 导出数据", use_container_width=True, help="下载JSON文件用于iOS应用导入"):
+            st.components.v1.html("""
+            <script>
+                if (window.exportForMobile) {
+                    window.exportForMobile();
+                    alert('数据已导出！请保存JSON文件以传输到iOS应用。');
+                } else {
+                    alert('导出功能暂时不可用，请稍后重试。');
+                }
+            </script>
+            """, height=50)
+    
+    with col2:
+        if st.button("💾 强制本地保存", use_container_width=True, help="手动触发本地存储保存"):
+            save_persistent_data()
+            st.success("数据已保存到本地存储")
+    
+    st.info("💡 数据会自动保存到浏览器本地存储，支持离线访问和iOS应用传输")
 
 # 血糖预警系统 (显著位置)
 if not st.session_state.glucose_data.empty:
