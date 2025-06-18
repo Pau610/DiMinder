@@ -2199,8 +2199,12 @@ else:
     with tab3:
         st.subheader("饮食记录汇总")
         try:
-            # Filter data to show only meal records (carbs > 0)
-            meal_data = st.session_state.glucose_data[st.session_state.glucose_data['carbs'] > 0].copy()
+            # Filter data to show meal records (including 0g carbs if food details exist)
+            meal_data = st.session_state.glucose_data[
+                (st.session_state.glucose_data['carbs'] >= 0) & 
+                (pd.notna(st.session_state.glucose_data['food_details'])) & 
+                (st.session_state.glucose_data['food_details'] != '')
+            ].copy()
             if not meal_data.empty:
                 meal_data = meal_data.sort_values('timestamp', ascending=False)
                 
