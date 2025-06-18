@@ -2106,19 +2106,14 @@ else:
                 glucose_records = glucose_data.head(30)
                 
                 for idx, row in glucose_records.iterrows():
-                    col1, col2, col3, col4, col5 = st.columns([2, 1, 2, 2, 1])
+                    # Single line display with proper spacing
+                    glucose_mmol = round(row['glucose_level'] / 18.0182, 1)
+                    status = '严重低血糖' if row['glucose_level'] <= 40 else ('低血糖' if row['glucose_level'] < 70 else ('正常' if row['glucose_level'] <= 180 else '高血糖'))
                     
+                    col1, col2 = st.columns([8, 1])
                     with col1:
-                        st.write(f"{row['timestamp'].strftime('%Y-%m-%d')}")
+                        st.write(f"{row['timestamp'].strftime('%Y-%m-%d %H:%M')} | {glucose_mmol} mmol/L | {status}")
                     with col2:
-                        st.write(f"{row['timestamp'].strftime('%H:%M')}")
-                    with col3:
-                        glucose_mmol = round(row['glucose_level'] / 18.0182, 1)
-                        st.write(f"{glucose_mmol} mmol/L")
-                    with col4:
-                        status = '严重低血糖' if row['glucose_level'] <= 40 else ('低血糖' if row['glucose_level'] < 70 else ('正常' if row['glucose_level'] <= 180 else '高血糖'))
-                        st.write(status)
-                    with col5:
                         if st.button("🗑️", key=f"delete_glucose_{idx}", help="删除记录"):
                             if f"confirm_delete_glucose_{idx}" not in st.session_state:
                                 st.session_state[f"confirm_delete_glucose_{idx}"] = True
@@ -2180,19 +2175,14 @@ else:
                 insulin_records = insulin_data.head(30)
                 
                 for idx, row in insulin_records.iterrows():
-                    col1, col2, col3, col4, col5, col6 = st.columns([2, 1, 1.5, 1.5, 1.5, 1])
+                    # Single line display with proper spacing
+                    insulin_type = row['insulin_type'] if pd.notna(row['insulin_type']) else '未指定'
+                    injection_site = row['injection_site'] if pd.notna(row['injection_site']) else '未指定'
                     
+                    col1, col2 = st.columns([8, 1])
                     with col1:
-                        st.write(f"{row['timestamp'].strftime('%Y-%m-%d')}")
+                        st.write(f"{row['timestamp'].strftime('%Y-%m-%d %H:%M')} | {row['insulin']:.1f}单位 | {insulin_type} | {injection_site}")
                     with col2:
-                        st.write(f"{row['timestamp'].strftime('%H:%M')}")
-                    with col3:
-                        st.write(f"{row['insulin']:.1f} 单位")
-                    with col4:
-                        st.write(f"{row['insulin_type'] if pd.notna(row['insulin_type']) else '未指定'}")
-                    with col5:
-                        st.write(f"{row['injection_site'] if pd.notna(row['injection_site']) else '未指定'}")
-                    with col6:
                         if st.button("🗑️", key=f"delete_insulin_{idx}", help="删除记录"):
                             if f"confirm_delete_insulin_{idx}" not in st.session_state:
                                 st.session_state[f"confirm_delete_insulin_{idx}"] = True
