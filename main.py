@@ -2110,22 +2110,16 @@ else:
                     glucose_mmol = round(row['glucose_level'] / 18.0182, 1)
                     status = '严重低血糖' if row['glucose_level'] <= 40 else ('低血糖' if row['glucose_level'] < 70 else ('正常' if row['glucose_level'] <= 180 else '高血糖'))
                     
-                    # Create container with inline layout
-                    container = st.container()
-                    with container:
-                        # Check for deletion first
-                        if st.button("×", key=f"delete_glucose_{idx}"):
+                    # Create proper inline layout with columns
+                    col1, col2 = st.columns([0.9, 0.1])
+                    with col1:
+                        st.write(f"**{row['timestamp'].strftime('%Y-%m-%d %H:%M')}** | {glucose_mmol} mmol/L | {status}")
+                    with col2:
+                        if st.button("×", key=f"delete_glucose_{idx}", use_container_width=True):
                             st.session_state.glucose_data = st.session_state.glucose_data.drop(idx).reset_index(drop=True)
                             save_persistent_data()
                             st.success("血糖记录已删除")
                             st.rerun()
-                        
-                        # Display record text using CSS positioning
-                        st.markdown(f"""
-                        <div style="margin-top: -35px; margin-bottom: 5px; padding-right: 60px;">
-                            <span><strong>{row['timestamp'].strftime('%Y-%m-%d %H:%M')}</strong> | {glucose_mmol} mmol/L | {status}</span>
-                        </div>
-                        """, unsafe_allow_html=True)
                 
                 # Glucose statistics
                 col1, col2, col3, col4 = st.columns(4)
@@ -2171,22 +2165,16 @@ else:
                     insulin_type = row['insulin_type'] if pd.notna(row['insulin_type']) else '未指定'
                     injection_site = row['injection_site'] if pd.notna(row['injection_site']) else '未指定'
                     
-                    # Create container with inline layout
-                    container = st.container()
-                    with container:
-                        # Check for deletion first
-                        if st.button("×", key=f"delete_insulin_{idx}"):
+                    # Create proper inline layout with columns
+                    col1, col2 = st.columns([0.9, 0.1])
+                    with col1:
+                        st.write(f"**{row['timestamp'].strftime('%Y-%m-%d %H:%M')}** | {row['insulin']:.1f}单位 | {insulin_type} | {injection_site}")
+                    with col2:
+                        if st.button("×", key=f"delete_insulin_{idx}", use_container_width=True):
                             st.session_state.glucose_data = st.session_state.glucose_data.drop(idx).reset_index(drop=True)
                             save_persistent_data()
                             st.success("胰岛素记录已删除")
                             st.rerun()
-                        
-                        # Display record text using CSS positioning
-                        st.markdown(f"""
-                        <div style="margin-top: -35px; margin-bottom: 5px; padding-right: 60px;">
-                            <span><strong>{row['timestamp'].strftime('%Y-%m-%d %H:%M')}</strong> | {row['insulin']:.1f}单位 | {insulin_type} | {injection_site}</span>
-                        </div>
-                        """, unsafe_allow_html=True)
                 
                 # Insulin statistics
                 col1, col2, col3, col4 = st.columns(4)
@@ -2234,22 +2222,16 @@ else:
                     # Create layout with functional delete button
                     food_details = row['food_details'] if pd.notna(row['food_details']) and row['food_details'] else '未记录详情'
                     
-                    # Create container with inline layout for first line
-                    container = st.container()
-                    with container:
-                        # Check for deletion first
-                        if st.button("×", key=f"delete_meal_{idx}"):
+                    # Create proper inline layout with columns for first line
+                    col1, col2 = st.columns([0.9, 0.1])
+                    with col1:
+                        st.write(f"**{row['timestamp'].strftime('%Y-%m-%d %H:%M')}** | {row['carbs']:.1f}g")
+                    with col2:
+                        if st.button("×", key=f"delete_meal_{idx}", use_container_width=True):
                             st.session_state.glucose_data = st.session_state.glucose_data.drop(idx).reset_index(drop=True)
                             save_persistent_data()
                             st.success("饮食记录已删除")
                             st.rerun()
-                        
-                        # Display record text using CSS positioning
-                        st.markdown(f"""
-                        <div style="margin-top: -35px; margin-bottom: 5px; padding-right: 60px;">
-                            <span><strong>{row['timestamp'].strftime('%Y-%m-%d %H:%M')}</strong> | {row['carbs']:.1f}g</span>
-                        </div>
-                        """, unsafe_allow_html=True)
                     
                     # Second line: food details
                     st.caption(f"  → {food_details}")
