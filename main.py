@@ -2147,65 +2147,24 @@ else:
                             st.session_state[f"confirm_delete_glucose_{idx}"] = True
                             st.rerun()
                         
-                        # JavaScript popup overlay
+                        # Show confirmation dialog
                         if st.session_state.get(f"confirm_delete_glucose_{idx}", False):
-                            import streamlit.components.v1 as components
-                            components.html(f"""
-                            <div id="confirmModal" style="
-                                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-                                background: rgba(0,0,0,0.5); z-index: 9999;
-                                display: flex; justify-content: center; align-items: center;">
-                                <div style="
-                                    background: white; padding: 30px; border-radius: 10px;
-                                    box-shadow: 0 4px 20px rgba(0,0,0,0.3); text-align: center;
-                                    min-width: 300px;">
-                                    <h3 style="color: #ff4b4b; margin-bottom: 20px;">⚠️ 确认删除</h3>
-                                    <p style="margin-bottom: 30px; color: #333;">确定要删除此血糖记录吗？<br><br>此操作无法撤销！</p>
-                                    <button onclick="confirmAction()" style="
-                                        background: #ff4b4b; color: white; border: none;
-                                        padding: 10px 20px; border-radius: 5px; font-size: 16px;
-                                        cursor: pointer; margin-right: 10px;">
-                                        🗑️ 确定删除
-                                    </button>
-                                    <button onclick="cancelAction()" style="
-                                        background: #6c757d; color: white; border: none;
-                                        padding: 10px 20px; border-radius: 5px; font-size: 16px;
-                                        cursor: pointer;">
-                                        ❌ 取消
-                                    </button>
-                                </div>
-                            </div>
+                            st.error("⚠️ 确定要删除此血糖记录吗？")
+                            st.warning("此操作无法撤销！")
                             
-                            <script>
-                            function confirmAction() {{
-                                window.parent.postMessage({{
-                                    type: 'streamlit:setComponentValue',
-                                    value: 'confirm_{idx}'
-                                }}, '*');
-                            }}
-                            
-                            function cancelAction() {{
-                                window.parent.postMessage({{
-                                    type: 'streamlit:setComponentValue',
-                                    value: 'cancel_{idx}'
-                                }}, '*');
-                            }}
-                            </script>
-                            """, height=0, key=f"glucose_modal_{idx}")
-                            
-                            # Handle confirmation result
-                            if f"glucose_modal_{idx}" in st.session_state:
-                                result = st.session_state[f"glucose_modal_{idx}"]
-                                if result == f"confirm_{idx}":
+                            col_confirm, col_cancel = st.columns(2)
+                            with col_confirm:
+                                if st.button("🗑️ 确定删除", key=f"confirm_glucose_{idx}", type="primary", use_container_width=True):
                                     st.session_state.glucose_data = st.session_state.glucose_data.drop(idx).reset_index(drop=True)
                                     save_persistent_data()
+                                    del st.session_state[f"confirm_delete_glucose_{idx}"]
                                     st.success("血糖记录已删除")
-                                
-                                # Clean up session state
-                                del st.session_state[f"confirm_delete_glucose_{idx}"]
-                                if f"glucose_modal_{idx}" in st.session_state:
-                                    del st.session_state[f"glucose_modal_{idx}"]
-                                st.rerun()
+                                    st.rerun()
+                            
+                            with col_cancel:
+                                if st.button("❌ 取消", key=f"cancel_glucose_{idx}", use_container_width=True):
+                                    del st.session_state[f"confirm_delete_glucose_{idx}"]
+                                    st.rerun()
                 
                 # Glucose statistics
                 col1, col2, col3, col4 = st.columns(4)
@@ -2288,65 +2247,24 @@ else:
                             st.session_state[f"confirm_delete_insulin_{idx}"] = True
                             st.rerun()
                         
-                        # JavaScript popup overlay
+                        # Show confirmation dialog
                         if st.session_state.get(f"confirm_delete_insulin_{idx}", False):
-                            import streamlit.components.v1 as components
-                            components.html(f"""
-                            <div id="confirmModal" style="
-                                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-                                background: rgba(0,0,0,0.5); z-index: 9999;
-                                display: flex; justify-content: center; align-items: center;">
-                                <div style="
-                                    background: white; padding: 30px; border-radius: 10px;
-                                    box-shadow: 0 4px 20px rgba(0,0,0,0.3); text-align: center;
-                                    min-width: 300px;">
-                                    <h3 style="color: #ff4b4b; margin-bottom: 20px;">⚠️ 确认删除</h3>
-                                    <p style="margin-bottom: 30px; color: #333;">确定要删除此胰岛素记录吗？<br><br>此操作无法撤销！</p>
-                                    <button onclick="confirmAction()" style="
-                                        background: #ff4b4b; color: white; border: none;
-                                        padding: 10px 20px; border-radius: 5px; font-size: 16px;
-                                        cursor: pointer; margin-right: 10px;">
-                                        🗑️ 确定删除
-                                    </button>
-                                    <button onclick="cancelAction()" style="
-                                        background: #6c757d; color: white; border: none;
-                                        padding: 10px 20px; border-radius: 5px; font-size: 16px;
-                                        cursor: pointer;">
-                                        ❌ 取消
-                                    </button>
-                                </div>
-                            </div>
+                            st.error("⚠️ 确定要删除此胰岛素记录吗？")
+                            st.warning("此操作无法撤销！")
                             
-                            <script>
-                            function confirmAction() {{
-                                window.parent.postMessage({{
-                                    type: 'streamlit:setComponentValue',
-                                    value: 'confirm_{idx}'
-                                }}, '*');
-                            }}
-                            
-                            function cancelAction() {{
-                                window.parent.postMessage({{
-                                    type: 'streamlit:setComponentValue',
-                                    value: 'cancel_{idx}'
-                                }}, '*');
-                            }}
-                            </script>
-                            """, height=0, key=f"insulin_modal_{idx}")
-                            
-                            # Handle confirmation result
-                            if f"insulin_modal_{idx}" in st.session_state:
-                                result = st.session_state[f"insulin_modal_{idx}"]
-                                if result == f"confirm_{idx}":
+                            col_confirm, col_cancel = st.columns(2)
+                            with col_confirm:
+                                if st.button("🗑️ 确定删除", key=f"confirm_insulin_{idx}", type="primary", use_container_width=True):
                                     st.session_state.glucose_data = st.session_state.glucose_data.drop(idx).reset_index(drop=True)
                                     save_persistent_data()
+                                    del st.session_state[f"confirm_delete_insulin_{idx}"]
                                     st.success("胰岛素记录已删除")
-                                
-                                # Clean up session state
-                                del st.session_state[f"confirm_delete_insulin_{idx}"]
-                                if f"insulin_modal_{idx}" in st.session_state:
-                                    del st.session_state[f"insulin_modal_{idx}"]
-                                st.rerun()
+                                    st.rerun()
+                            
+                            with col_cancel:
+                                if st.button("❌ 取消", key=f"cancel_insulin_{idx}", use_container_width=True):
+                                    del st.session_state[f"confirm_delete_insulin_{idx}"]
+                                    st.rerun()
                 
                 # Insulin statistics
                 col1, col2, col3, col4 = st.columns(4)
@@ -2431,65 +2349,24 @@ else:
                             st.session_state[f"confirm_delete_meal_{idx}"] = True
                             st.rerun()
                         
-                        # JavaScript popup overlay
+                        # Show confirmation dialog
                         if st.session_state.get(f"confirm_delete_meal_{idx}", False):
-                            import streamlit.components.v1 as components
-                            components.html(f"""
-                            <div id="confirmModal" style="
-                                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-                                background: rgba(0,0,0,0.5); z-index: 9999;
-                                display: flex; justify-content: center; align-items: center;">
-                                <div style="
-                                    background: white; padding: 30px; border-radius: 10px;
-                                    box-shadow: 0 4px 20px rgba(0,0,0,0.3); text-align: center;
-                                    min-width: 300px;">
-                                    <h3 style="color: #ff4b4b; margin-bottom: 20px;">⚠️ 确认删除</h3>
-                                    <p style="margin-bottom: 30px; color: #333;">确定要删除此饮食记录吗？<br><br>此操作无法撤销！</p>
-                                    <button onclick="confirmAction()" style="
-                                        background: #ff4b4b; color: white; border: none;
-                                        padding: 10px 20px; border-radius: 5px; font-size: 16px;
-                                        cursor: pointer; margin-right: 10px;">
-                                        🗑️ 确定删除
-                                    </button>
-                                    <button onclick="cancelAction()" style="
-                                        background: #6c757d; color: white; border: none;
-                                        padding: 10px 20px; border-radius: 5px; font-size: 16px;
-                                        cursor: pointer;">
-                                        ❌ 取消
-                                    </button>
-                                </div>
-                            </div>
+                            st.error("⚠️ 确定要删除此饮食记录吗？")
+                            st.warning("此操作无法撤销！")
                             
-                            <script>
-                            function confirmAction() {{
-                                window.parent.postMessage({{
-                                    type: 'streamlit:setComponentValue',
-                                    value: 'confirm_{idx}'
-                                }}, '*');
-                            }}
-                            
-                            function cancelAction() {{
-                                window.parent.postMessage({{
-                                    type: 'streamlit:setComponentValue',
-                                    value: 'cancel_{idx}'
-                                }}, '*');
-                            }}
-                            </script>
-                            """, height=0, key=f"meal_modal_{idx}")
-                            
-                            # Handle confirmation result
-                            if f"meal_modal_{idx}" in st.session_state:
-                                result = st.session_state[f"meal_modal_{idx}"]
-                                if result == f"confirm_{idx}":
+                            col_confirm, col_cancel = st.columns(2)
+                            with col_confirm:
+                                if st.button("🗑️ 确定删除", key=f"confirm_meal_{idx}", type="primary", use_container_width=True):
                                     st.session_state.glucose_data = st.session_state.glucose_data.drop(idx).reset_index(drop=True)
                                     save_persistent_data()
+                                    del st.session_state[f"confirm_delete_meal_{idx}"]
                                     st.success("饮食记录已删除")
-                                
-                                # Clean up session state
-                                del st.session_state[f"confirm_delete_meal_{idx}"]
-                                if f"meal_modal_{idx}" in st.session_state:
-                                    del st.session_state[f"meal_modal_{idx}"]
-                                st.rerun()
+                                    st.rerun()
+                            
+                            with col_cancel:
+                                if st.button("❌ 取消", key=f"cancel_meal_{idx}", use_container_width=True):
+                                    del st.session_state[f"confirm_delete_meal_{idx}"]
+                                    st.rerun()
                     
                     # Second line: food details
                     st.caption(f"  → {food_details}")
