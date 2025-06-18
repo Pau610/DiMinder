@@ -1050,6 +1050,7 @@ if st.session_state.input_type == 'glucose':
                         background-color: white;
                     "
                     oninput="updateGlucoseTime(this.value)"
+                    onblur="handleGlucoseTimeBlur()"
                 />
                 <button 
                     onclick="clearGlucoseTime()" 
@@ -1075,8 +1076,10 @@ if st.session_state.input_type == 'glucose':
             function updateGlucoseTime(value) {{
                 // Store the raw input value
                 window.glucoseTimeRawInput = value;
-                
-                // Auto-format the time only when complete
+            }}
+            
+            function handleGlucoseTimeBlur() {{
+                let value = document.getElementById('glucose_time_input_custom').value;
                 if (value && (value.length === 3 || value.length === 4)) {{
                     let formatted = formatTimeInput(value);
                     if (formatted !== value && formatted.includes(':')) {{
@@ -1199,6 +1202,7 @@ elif st.session_state.input_type == 'meal':
                         background-color: white;
                     "
                     oninput="updateMealTime(this.value)"
+                    onblur="handleMealTimeBlur()"
                 />
                 <button 
                     onclick="clearMealTime()" 
@@ -1224,8 +1228,10 @@ elif st.session_state.input_type == 'meal':
             function updateMealTime(value) {{
                 // Store the raw input value
                 window.mealTimeRawInput = value;
-                
-                // Auto-format the time only when complete
+            }}
+            
+            function handleMealTimeBlur() {{
+                let value = document.getElementById('meal_time_input_custom').value;
                 if (value && (value.length === 3 || value.length === 4)) {{
                     let formatted = formatTimeInput(value);
                     if (formatted !== value && formatted.includes(':')) {{
@@ -1390,6 +1396,7 @@ elif st.session_state.input_type == 'insulin':
                         background-color: white;
                     "
                     oninput="updateInjectionTime(this.value)"
+                    onblur="handleInjectionTimeBlur()"
                 />
                 <button 
                     onclick="clearInjectionTime()" 
@@ -1415,8 +1422,10 @@ elif st.session_state.input_type == 'insulin':
             function updateInjectionTime(value) {{
                 // Store the raw input value
                 window.injectionTimeRawInput = value;
-                
-                // Auto-format the time only when complete
+            }}
+            
+            function handleInjectionTimeBlur() {{
+                let value = document.getElementById('injection_time_input_custom').value;
                 if (value && (value.length === 3 || value.length === 4)) {{
                     let formatted = formatTimeInput(value);
                     if (formatted !== value && formatted.includes(':')) {{
