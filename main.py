@@ -2247,20 +2247,47 @@ else:
                 meal_records = meal_data.head(30)
                 
                 for idx, row in meal_records.iterrows():
-                    # First line: date, time, total carbs, and small delete button
-                    col1, col2 = st.columns([8, 1])
-                    with col1:
-                        st.write(f"{row['timestamp'].strftime('%Y-%m-%d %H:%M')} | {row['carbs']:.1f}g")
-                    with col2:
-                        # Use a smaller button with custom styling
-                        if st.button("×", key=f"delete_meal_{idx}", help="删除记录"):
-                            if f"confirm_delete_meal_{idx}" not in st.session_state:
-                                st.session_state[f"confirm_delete_meal_{idx}"] = True
-                                st.rerun()
-                    
-                    # Second line: food details
+                    # Create truly inline layout using HTML with delete button
                     food_details = row['food_details'] if pd.notna(row['food_details']) and row['food_details'] else '未记录详情'
-                    st.caption(f"  → {food_details}")
+                    
+                    components.html(f"""
+                    <div style="margin-bottom: 8px;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 2px;">
+                            <span style="font-size: 14px; color: #262730;">{row['timestamp'].strftime('%Y-%m-%d %H:%M')} | {row['carbs']:.1f}g</span>
+                            <button onclick="deleteMealRecord('{idx}')" 
+                                    style="background: #ff4b4b; color: white; border: none; 
+                                           border-radius: 3px; padding: 2px 6px; font-size: 10px; 
+                                           cursor: pointer; min-width: 20px; height: 20px;">
+                                ×
+                            </button>
+                        </div>
+                        <div style="color: #666; font-size: 12px; margin-left: 8px;">
+                            → {food_details}
+                        </div>
+                    </div>
+                    
+                    <script>
+                    function deleteMealRecord(idx) {{
+                        // Signal Streamlit to delete this record
+                        window.parent.postMessage({{
+                            type: 'delete_meal',
+                            idx: idx
+                        }}, '*');
+                        
+                        // Show confirmation in the meantime
+                        if (confirm('确认删除此饮食记录？')) {{
+                            // The actual deletion will be handled by Streamlit
+                            alert('记录删除请求已发送');
+                        }}
+                    }}
+                    </script>
+                    """, height=50)
+                    
+                    # Handle deletion through Streamlit button (hidden)
+                    if st.button(f"delete_hidden_{idx}", key=f"delete_meal_{idx}", label_visibility="hidden"):
+                        if f"confirm_delete_meal_{idx}" not in st.session_state:
+                            st.session_state[f"confirm_delete_meal_{idx}"] = True
+                            st.rerun()
                             
                     # Confirmation dialog
                     if f"confirm_delete_meal_{idx}" in st.session_state:
