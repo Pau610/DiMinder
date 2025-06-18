@@ -20,6 +20,19 @@ st.set_page_config(
     initial_sidebar_state="collapsed"  # 在移动端默认收起侧边栏
 )
 
+# PWA Meta tags and manifest
+st.markdown("""
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="theme-color" content="#1f77b4">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="我的日記">
+<meta name="description" content="专业的糖尿病健康数据管理和预测应用">
+<link rel="manifest" href="/static/manifest.json">
+<link rel="apple-touch-icon" href="/generated-icon.png">
+<link rel="icon" type="image/png" href="/generated-icon.png">
+""", unsafe_allow_html=True)
+
 # Custom CSS for mobile-friendly design and localStorage
 st.markdown("""
 <style>
@@ -58,103 +71,281 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# JavaScript for localStorage functionality
+# Enhanced PWA JavaScript with offline functionality and IndexedDB
 st.markdown("""
 <script>
-// Local Storage Functions for Mobile App Transfer
-class DiabetesLocalStorage {
+// Service Worker Registration for PWA
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/static/sw.js')
+            .then(registration => {
+                console.log('ServiceWorker registered successfully');
+                // Enable background sync
+                if ('sync' in window.ServiceWorkerRegistration.prototype) {
+                    console.log('Background Sync supported');
+                }
+            })
+            .catch(error => {
+                console.log('ServiceWorker registration failed:', error);
+            });
+    });
+}
+
+// Enhanced Local Storage with IndexedDB for PWA
+class PWADiabetesStorage {
     constructor() {
         this.storageKey = 'diabetes_diary_data';
         this.backupKey = 'diabetes_diary_backup';
+        this.dbName = 'DiabetesDiaryDB';
+        this.dbVersion = 1;
+        this.db = null;
+        this.initIndexedDB();
     }
     
-    // Save data to localStorage
-    saveData(data) {
+    // Initialize IndexedDB for offline storage
+    async initIndexedDB() {
         try {
+            const request = indexedDB.open(this.dbName, this.dbVersion);
+            
+            request.onerror = () => {
+                console.error('IndexedDB error:', request.error);
+                this.fallbackToLocalStorage();
+            };
+            
+            request.onsuccess = () => {
+                this.db = request.result;
+                console.log('IndexedDB initialized successfully');
+            };
+            
+            request.onupgradeneeded = (event) => {
+                const db = event.target.result;
+                
+                // Create object stores
+                if (!db.objectStoreNames.contains('diabetesData')) {
+                    const store = db.createObjectStore('diabetesData', { keyPath: 'id', autoIncrement: true });
+                    store.createIndex('timestamp', 'timestamp', { unique: false });
+                    store.createIndex('type', 'type', { unique: false });
+                }
+                
+                if (!db.objectStoreNames.contains('pendingSync')) {
+                    db.createObjectStore('pendingSync', { keyPath: 'id', autoIncrement: true });
+                }
+            };
+        } catch (error) {
+            console.error('IndexedDB initialization failed:', error);
+            this.fallbackToLocalStorage();
+        }
+    }
+    
+    // Fallback to localStorage if IndexedDB fails
+    fallbackToLocalStorage() {
+        console.log('Using localStorage fallback');
+        this.useLocalStorageOnly = true;
+    }
+    
+    // Save data with offline capability
+    async saveData(data) {
+        try {
+            // Save to IndexedDB first
+            if (this.db && !this.useLocalStorageOnly) {
+                await this.saveToIndexedDB(data);
+            }
+            
+            // Backup to localStorage
             const jsonData = JSON.stringify(data);
             localStorage.setItem(this.storageKey, jsonData);
             localStorage.setItem(this.backupKey, jsonData);
-            console.log('Data saved to localStorage successfully');
+            
+            // Queue for background sync when online
+            if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                this.queueForSync(data);
+            }
+            
+            console.log('Data saved successfully (PWA mode)');
             return true;
         } catch (error) {
-            console.error('Error saving data to localStorage:', error);
+            console.error('Error saving data:', error);
             return false;
         }
     }
     
-    // Load data from localStorage
-    loadData() {
+    // Save to IndexedDB
+    async saveToIndexedDB(data) {
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['diabetesData'], 'readwrite');
+            const store = transaction.objectStore('diabetesData');
+            
+            // Clear existing data and add new
+            store.clear().onsuccess = () => {
+                data.forEach((item, index) => {
+                    const record = {
+                        ...item,
+                        syncStatus: 'pending',
+                        localId: index
+                    };
+                    store.add(record);
+                });
+            };
+            
+            transaction.oncomplete = () => resolve();
+            transaction.onerror = () => reject(transaction.error);
+        });
+    }
+    
+    // Queue data for background sync
+    queueForSync(data) {
+        if (navigator.serviceWorker && navigator.serviceWorker.ready) {
+            navigator.serviceWorker.ready.then(registration => {
+                return registration.sync.register('diabetes-data-sync');
+            }).catch(error => {
+                console.log('Background sync registration failed:', error);
+            });
+        }
+    }
+    
+    // Load data from IndexedDB or localStorage
+    async loadData() {
         try {
+            // Try IndexedDB first
+            if (this.db && !this.useLocalStorageOnly) {
+                const indexedData = await this.loadFromIndexedDB();
+                if (indexedData && indexedData.length > 0) {
+                    return indexedData;
+                }
+            }
+            
+            // Fallback to localStorage
             const data = localStorage.getItem(this.storageKey);
             if (data) {
                 return JSON.parse(data);
             }
-            // Try backup if main storage fails
+            
             const backupData = localStorage.getItem(this.backupKey);
             if (backupData) {
                 return JSON.parse(backupData);
             }
+            
             return null;
         } catch (error) {
-            console.error('Error loading data from localStorage:', error);
+            console.error('Error loading data:', error);
             return null;
         }
+    }
+    
+    // Load from IndexedDB
+    async loadFromIndexedDB() {
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['diabetesData'], 'readonly');
+            const store = transaction.objectStore('diabetesData');
+            const request = store.getAll();
+            
+            request.onsuccess = () => {
+                const results = request.result.map(item => {
+                    const { id, syncStatus, localId, ...data } = item;
+                    return data;
+                });
+                resolve(results);
+            };
+            
+            request.onerror = () => reject(request.error);
+        });
     }
     
     // Export data for mobile app transfer
     exportData() {
-        const data = this.loadData();
-        if (data) {
-            const blob = new Blob([JSON.stringify(data, null, 2)], {
-                type: 'application/json'
-            });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `diabetes_diary_${new Date().toISOString().split('T')[0]}.json`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            console.log('Data exported for mobile app transfer');
-        }
+        this.loadData().then(data => {
+            if (data) {
+                const exportData = {
+                    version: '1.0.0',
+                    exportDate: new Date().toISOString(),
+                    app: '我的日記',
+                    data: data
+                };
+                
+                const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+                    type: 'application/json'
+                });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `diabetes_diary_${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                console.log('Data exported for mobile app transfer');
+            }
+        });
     }
     
-    // Clear all stored data
-    clearData() {
-        localStorage.removeItem(this.storageKey);
-        localStorage.removeItem(this.backupKey);
-        console.log('All local data cleared');
+    // Check offline status
+    isOnline() {
+        return navigator.onLine;
     }
     
-    // Get storage usage info
-    getStorageInfo() {
-        const data = localStorage.getItem(this.storageKey);
+    // Get storage info
+    async getStorageInfo() {
+        const data = await this.loadData();
         return {
-            hasData: !!data,
-            dataSize: data ? data.length : 0,
-            lastModified: data ? new Date().toISOString() : null
+            hasData: !!(data && data.length > 0),
+            dataSize: data ? JSON.stringify(data).length : 0,
+            recordCount: data ? data.length : 0,
+            lastModified: new Date().toISOString(),
+            isOnline: this.isOnline(),
+            storageType: this.useLocalStorageOnly ? 'localStorage' : 'IndexedDB'
         };
     }
 }
 
-// Initialize storage manager
-window.diabetesStorage = new DiabetesLocalStorage();
+// Initialize PWA storage manager
+window.diabetesStorage = new PWADiabetesStorage();
 
-// Auto-save function that can be called from Python
+// PWA functions
 window.autoSaveData = function(data) {
     return window.diabetesStorage.saveData(data);
 };
 
-// Load function that can be called from Python
 window.loadStoredData = function() {
     return window.diabetesStorage.loadData();
 };
 
-// Export function for mobile transfer
 window.exportForMobile = function() {
     window.diabetesStorage.exportData();
 };
+
+// PWA install prompt
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+    deferredPrompt = e;
+    console.log('PWA install prompt available');
+});
+
+window.showInstallPrompt = function() {
+    if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((choiceResult) => {
+            if (choiceResult.outcome === 'accepted') {
+                console.log('User accepted PWA install');
+            }
+            deferredPrompt = null;
+        });
+    }
+};
+
+// Network status monitoring
+window.addEventListener('online', () => {
+    console.log('App is online');
+    // Trigger background sync
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.ready.then(registration => {
+            return registration.sync.register('diabetes-data-sync');
+        });
+    }
+});
+
+window.addEventListener('offline', () => {
+    console.log('App is offline - using local storage');
+});
 </script>
 """, unsafe_allow_html=True)
 
@@ -779,49 +970,118 @@ with st.sidebar:
                 else:
                     st.error("请输入胰岛素剂量")
 
-    # Mobile App Transfer Section
+    # PWA and Mobile App Transfer Section
     st.markdown("---")
-    st.subheader("📱 移动应用数据传输")
+    st.subheader("📱 PWA 离线应用")
     
-    # Storage status indicator
+    # Enhanced storage status with PWA capabilities
     components.html("""
+    <div id="pwa-status-container"></div>
     <script>
-        if (window.diabetesStorage) {
-            const info = window.diabetesStorage.getStorageInfo();
-            const statusDiv = document.createElement('div');
-            statusDiv.innerHTML = `
-                <div style="padding: 10px; background: ${info.hasData ? '#d4edda' : '#f8d7da'}; 
-                           border-radius: 5px; margin: 10px 0;">
-                    <strong>本地存储状态:</strong> ${info.hasData ? '✓ 已保存' : '✗ 无数据'}<br>
-                    ${info.hasData ? `数据大小: ${(info.dataSize/1024).toFixed(2)} KB` : ''}
-                </div>
-            `;
-            document.body.appendChild(statusDiv);
+        async function updatePWAStatus() {
+            if (window.diabetesStorage) {
+                const info = await window.diabetesStorage.getStorageInfo();
+                const isInstalled = window.matchMedia('(display-mode: standalone)').matches;
+                const canInstall = !!window.deferredPrompt || !isInstalled;
+                
+                const statusDiv = document.getElementById('pwa-status-container');
+                statusDiv.innerHTML = `
+                    <div style="padding: 15px; background: linear-gradient(135deg, #e3f2fd, #f3e5f5); 
+                               border-radius: 10px; margin: 10px 0; border-left: 4px solid #1976d2;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 10px;">
+                            <div>
+                                <strong>🔄 存储状态:</strong> ${info.hasData ? '✅ 已保存' : '❌ 无数据'}<br>
+                                <small>记录数: ${info.recordCount || 0} | 大小: ${(info.dataSize/1024).toFixed(1)} KB</small>
+                            </div>
+                            <div>
+                                <strong>🌐 网络状态:</strong> ${info.isOnline ? '🟢 在线' : '🔴 离线'}<br>
+                                <small>存储类型: ${info.storageType}</small>
+                            </div>
+                        </div>
+                        <div>
+                            <strong>📲 PWA状态:</strong> ${isInstalled ? '✅ 已安装为应用' : '📥 可安装为应用'}<br>
+                            <small>支持离线使用、后台同步和推送通知</small>
+                        </div>
+                    </div>
+                `;
+            }
         }
+        
+        // Update status immediately and every 5 seconds
+        updatePWAStatus();
+        setInterval(updatePWAStatus, 5000);
     </script>
-    """, height=80)
+    """, height=120)
     
-    col1, col2 = st.columns(2)
+    # PWA action buttons
+    col1, col2, col3 = st.columns(3)
     
     with col1:
-        if st.button("📤 导出数据", use_container_width=True, help="下载JSON文件用于iOS应用导入"):
+        if st.button("📲 安装PWA", use_container_width=True, help="安装为手机应用，支持离线使用"):
             components.html("""
             <script>
-                if (window.exportForMobile) {
-                    window.exportForMobile();
-                    alert('数据已导出！请保存JSON文件以传输到iOS应用。');
+                if (window.showInstallPrompt) {
+                    window.showInstallPrompt();
+                } else if (window.matchMedia('(display-mode: standalone)').matches) {
+                    alert('应用已经安装！');
                 } else {
-                    alert('导出功能暂时不可用，请稍后重试。');
+                    alert('请在Chrome/Edge浏览器中使用"添加到主屏幕"功能安装PWA应用');
                 }
             </script>
             """, height=50)
     
     with col2:
-        if st.button("💾 强制本地保存", use_container_width=True, help="手动触发本地存储保存"):
-            save_persistent_data()
-            st.success("数据已保存到本地存储")
+        if st.button("📤 导出数据", use_container_width=True, help="下载JSON文件用于数据传输"):
+            components.html("""
+            <script>
+                if (window.exportForMobile) {
+                    window.exportForMobile();
+                    setTimeout(() => {
+                        alert('数据已导出为JSON文件！可用于iOS应用或其他设备导入。');
+                    }, 500);
+                } else {
+                    alert('导出功能初始化中，请稍后重试。');
+                }
+            </script>
+            """, height=50)
     
-    st.info("💡 数据会自动保存到浏览器本地存储，支持离线访问和iOS应用传输")
+    with col3:
+        if st.button("💾 手动同步", use_container_width=True, help="手动触发数据同步和备份"):
+            save_persistent_data()
+            components.html("""
+            <script>
+                // Trigger background sync if available
+                if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                    navigator.serviceWorker.ready.then(registration => {
+                        if ('sync' in registration) {
+                            return registration.sync.register('diabetes-data-sync');
+                        }
+                    }).catch(console.error);
+                }
+            </script>
+            """, height=50)
+            st.success("数据已同步到本地存储")
+    
+    # PWA features info
+    with st.expander("🚀 PWA功能说明", expanded=False):
+        st.markdown("""
+        **渐进式Web应用 (PWA) 功能:**
+        
+        🔸 **离线访问**: 无网络时仍可使用应用和查看数据
+        🔸 **应用安装**: 可安装到手机主屏幕，像原生应用一样使用
+        🔸 **自动同步**: 网络恢复时自动同步数据
+        🔸 **推送通知**: 支持健康提醒和血糖警告通知
+        🔸 **快速启动**: 缓存技术确保快速加载
+        🔸 **数据安全**: 多重备份机制保护数据不丢失
+        
+        **如何安装PWA:**
+        1. 在Chrome/Edge浏览器中打开应用
+        2. 点击地址栏的"安装"图标，或使用上方"安装PWA"按钮
+        3. 确认安装，应用将添加到主屏幕
+        4. 可像普通应用一样从主屏幕启动
+        """)
+        
+    st.info("💡 PWA技术实现完全离线数据存储，支持IndexedDB和localStorage双重备份")
 
 # 血糖预警系统 (显著位置)
 if not st.session_state.glucose_data.empty:
