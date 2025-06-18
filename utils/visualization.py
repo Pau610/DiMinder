@@ -166,7 +166,7 @@ def create_prediction_plot(data, predictions):
         ),
         yaxis=dict(
             tickfont=dict(size=10),
-            range=[0, max(200, max(data['glucose_level'].max(), max(predictions)) * 1.1)]
+            range=[0, 15]  # Fixed range 0-15 mmol/L for glucose predictions
         )
     )
 
