@@ -2110,13 +2110,13 @@ else:
                     glucose_mmol = round(row['glucose_level'] / 18.0182, 1)
                     status = '严重低血糖' if row['glucose_level'] <= 40 else ('低血糖' if row['glucose_level'] < 70 else ('正常' if row['glucose_level'] <= 180 else '高血糖'))
                     
-                    # Use columns for inline layout with functional delete button
-                    col1, col2 = st.columns([9, 1])
+                    # Create truly inline layout with record and delete button
+                    col1, col2 = st.columns([0.95, 0.05], gap="small")
                     with col1:
-                        st.markdown(f"**{row['timestamp'].strftime('%Y-%m-%d %H:%M')}** | {glucose_mmol} mmol/L | {status}")
+                        st.write(f"**{row['timestamp'].strftime('%Y-%m-%d %H:%M')}** | {glucose_mmol} mmol/L | {status}")
                     with col2:
-                        if st.button("×", key=f"delete_glucose_{idx}", help="删除血糖记录"):
-                            # Direct deletion without confirmation dialog
+                        # Use a compact delete button
+                        if st.button("×", key=f"delete_glucose_{idx}", help="删除", type="secondary"):
                             st.session_state.glucose_data = st.session_state.glucose_data.drop(idx).reset_index(drop=True)
                             save_persistent_data()
                             st.success("血糖记录已删除")
@@ -2166,13 +2166,12 @@ else:
                     insulin_type = row['insulin_type'] if pd.notna(row['insulin_type']) else '未指定'
                     injection_site = row['injection_site'] if pd.notna(row['injection_site']) else '未指定'
                     
-                    # Use columns for inline layout with functional delete button
-                    col1, col2 = st.columns([9, 1])
+                    # Create truly inline layout with record and delete button
+                    col1, col2 = st.columns([0.95, 0.05], gap="small")
                     with col1:
-                        st.markdown(f"**{row['timestamp'].strftime('%Y-%m-%d %H:%M')}** | {row['insulin']:.1f}单位 | {insulin_type} | {injection_site}")
+                        st.write(f"**{row['timestamp'].strftime('%Y-%m-%d %H:%M')}** | {row['insulin']:.1f}单位 | {insulin_type} | {injection_site}")
                     with col2:
-                        if st.button("×", key=f"delete_insulin_{idx}", help="删除胰岛素记录"):
-                            # Direct deletion without confirmation dialog
+                        if st.button("×", key=f"delete_insulin_{idx}", help="删除", type="secondary"):
                             st.session_state.glucose_data = st.session_state.glucose_data.drop(idx).reset_index(drop=True)
                             save_persistent_data()
                             st.success("胰岛素记录已删除")
@@ -2225,12 +2224,11 @@ else:
                     food_details = row['food_details'] if pd.notna(row['food_details']) and row['food_details'] else '未记录详情'
                     
                     # First line with datetime, carbs and delete button
-                    col1, col2 = st.columns([9, 1])
+                    col1, col2 = st.columns([0.95, 0.05], gap="small")
                     with col1:
-                        st.markdown(f"**{row['timestamp'].strftime('%Y-%m-%d %H:%M')}** | {row['carbs']:.1f}g")
+                        st.write(f"**{row['timestamp'].strftime('%Y-%m-%d %H:%M')}** | {row['carbs']:.1f}g")
                     with col2:
-                        if st.button("×", key=f"delete_meal_{idx}", help="删除饮食记录"):
-                            # Direct deletion without confirmation dialog
+                        if st.button("×", key=f"delete_meal_{idx}", help="删除", type="secondary"):
                             st.session_state.glucose_data = st.session_state.glucose_data.drop(idx).reset_index(drop=True)
                             save_persistent_data()
                             st.success("饮食记录已删除")
