@@ -2148,17 +2148,37 @@ else:
                         
                         # Show confirmation dialog if needed
                         if st.session_state.get(f"confirm_delete_glucose_{idx}", False):
-                            st.warning("确定要删除此血糖记录吗？")
-                            col_yes, col_no = st.columns(2)
+                            st.error("⚠️ 确定要删除此血糖记录吗？")
+                            
+                            # Add custom CSS for confirmation buttons
+                            st.markdown("""
+                            <style>
+                            .confirm-button {
+                                padding: 10px 20px !important;
+                                font-size: 16px !important;
+                                font-weight: bold !important;
+                                border-radius: 8px !important;
+                                margin: 5px !important;
+                                cursor: pointer !important;
+                                width: 100% !important;
+                                height: 45px !important;
+                                min-height: 45px !important;
+                            }
+                            </style>
+                            """, unsafe_allow_html=True)
+                            
+                            col_yes, col_no = st.columns([1, 1])
                             with col_yes:
-                                if st.button("确定删除", key=f"confirm_yes_glucose_{idx}", type="primary"):
+                                if st.button("🗑️ 确定删除", key=f"confirm_yes_glucose_{idx}", 
+                                           type="primary", use_container_width=True):
                                     st.session_state.glucose_data = st.session_state.glucose_data.drop(idx).reset_index(drop=True)
                                     save_persistent_data()
                                     del st.session_state[f"confirm_delete_glucose_{idx}"]
                                     st.success("血糖记录已删除")
                                     st.rerun()
                             with col_no:
-                                if st.button("取消", key=f"confirm_no_glucose_{idx}"):
+                                if st.button("❌ 取消", key=f"confirm_no_glucose_{idx}", 
+                                           use_container_width=True):
                                     del st.session_state[f"confirm_delete_glucose_{idx}"]
                                     st.rerun()
                 
@@ -2244,17 +2264,37 @@ else:
                         
                         # Show confirmation dialog if needed
                         if st.session_state.get(f"confirm_delete_insulin_{idx}", False):
-                            st.warning("确定要删除此胰岛素记录吗？")
-                            col_yes, col_no = st.columns(2)
+                            st.error("⚠️ 确定要删除此胰岛素记录吗？")
+                            
+                            # Add custom CSS for confirmation buttons
+                            st.markdown("""
+                            <style>
+                            .confirm-button {
+                                padding: 10px 20px !important;
+                                font-size: 16px !important;
+                                font-weight: bold !important;
+                                border-radius: 8px !important;
+                                margin: 5px !important;
+                                cursor: pointer !important;
+                                width: 100% !important;
+                                height: 45px !important;
+                                min-height: 45px !important;
+                            }
+                            </style>
+                            """, unsafe_allow_html=True)
+                            
+                            col_yes, col_no = st.columns([1, 1])
                             with col_yes:
-                                if st.button("确定删除", key=f"confirm_yes_insulin_{idx}", type="primary"):
+                                if st.button("🗑️ 确定删除", key=f"confirm_yes_insulin_{idx}", 
+                                           type="primary", use_container_width=True):
                                     st.session_state.glucose_data = st.session_state.glucose_data.drop(idx).reset_index(drop=True)
                                     save_persistent_data()
                                     del st.session_state[f"confirm_delete_insulin_{idx}"]
                                     st.success("胰岛素记录已删除")
                                     st.rerun()
                             with col_no:
-                                if st.button("取消", key=f"confirm_no_insulin_{idx}"):
+                                if st.button("❌ 取消", key=f"confirm_no_insulin_{idx}", 
+                                           use_container_width=True):
                                     del st.session_state[f"confirm_delete_insulin_{idx}"]
                                     st.rerun()
                 
@@ -2342,17 +2382,37 @@ else:
                         
                         # Show confirmation dialog if needed
                         if st.session_state.get(f"confirm_delete_meal_{idx}", False):
-                            st.warning("确定要删除此饮食记录吗？")
-                            col_yes, col_no = st.columns(2)
+                            st.error("⚠️ 确定要删除此饮食记录吗？")
+                            
+                            # Add custom CSS for confirmation buttons
+                            st.markdown("""
+                            <style>
+                            .confirm-button {
+                                padding: 10px 20px !important;
+                                font-size: 16px !important;
+                                font-weight: bold !important;
+                                border-radius: 8px !important;
+                                margin: 5px !important;
+                                cursor: pointer !important;
+                                width: 100% !important;
+                                height: 45px !important;
+                                min-height: 45px !important;
+                            }
+                            </style>
+                            """, unsafe_allow_html=True)
+                            
+                            col_yes, col_no = st.columns([1, 1])
                             with col_yes:
-                                if st.button("确定删除", key=f"confirm_yes_meal_{idx}", type="primary"):
+                                if st.button("🗑️ 确定删除", key=f"confirm_yes_meal_{idx}", 
+                                           type="primary", use_container_width=True):
                                     st.session_state.glucose_data = st.session_state.glucose_data.drop(idx).reset_index(drop=True)
                                     save_persistent_data()
                                     del st.session_state[f"confirm_delete_meal_{idx}"]
                                     st.success("饮食记录已删除")
                                     st.rerun()
                             with col_no:
-                                if st.button("取消", key=f"confirm_no_meal_{idx}"):
+                                if st.button("❌ 取消", key=f"confirm_no_meal_{idx}", 
+                                           use_container_width=True):
                                     del st.session_state[f"confirm_delete_meal_{idx}"]
                                     st.rerun()
                     
