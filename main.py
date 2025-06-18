@@ -2247,14 +2247,13 @@ else:
                 meal_records = meal_data.head(30)
                 
                 for idx, row in meal_records.iterrows():
-                    # First line: date, time, total carbs, and delete button
-                    col1, col2, col3 = st.columns([3, 1, 0.5])
+                    # First line: date, time, total carbs, and small delete button
+                    col1, col2 = st.columns([8, 1])
                     with col1:
-                        st.write(f"{row['timestamp'].strftime('%Y-%m-%d %H:%M')}")
+                        st.write(f"{row['timestamp'].strftime('%Y-%m-%d %H:%M')} | {row['carbs']:.1f}g")
                     with col2:
-                        st.write(f"{row['carbs']:.1f}g")
-                    with col3:
-                        if st.button("🗑️", key=f"delete_meal_{idx}", help="删除记录"):
+                        # Use a smaller button with custom styling
+                        if st.button("×", key=f"delete_meal_{idx}", help="删除记录"):
                             if f"confirm_delete_meal_{idx}" not in st.session_state:
                                 st.session_state[f"confirm_delete_meal_{idx}"] = True
                                 st.rerun()
