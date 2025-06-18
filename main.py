@@ -165,10 +165,8 @@ class PWADiabetesStorage {
             // Mark offline entries for sync protection
             this.markOfflineEntries(mergedData);
             
-            // Queue for background sync when online
-            if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-                this.queueForSync(mergedData);
-            }
+            // Pure offline app - no server sync needed
+            console.log('Data saved locally (offline-only mode)');
             
             console.log('Data saved with offline protection (PWA mode)');
             return true;
@@ -178,52 +176,16 @@ class PWADiabetesStorage {
         }
     }
     
-    // Merge offline data with new data, prioritizing offline entries
+    // Pure offline data management - no merging needed for single-user app
     mergeOfflineData(existingData, newData) {
-        if (!existingData || !Array.isArray(existingData)) {
-            return Array.isArray(newData) ? newData : [];
-        }
-        
-        if (!newData || !Array.isArray(newData)) {
-            return existingData;
-        }
-        
-        // Create a map of existing data by timestamp
-        const existingMap = new Map();
-        existingData.forEach(item => {
-            if (item.timestamp) {
-                const key = `${item.timestamp}_${item.glucose_level || 0}_${item.carbs || 0}_${item.insulin || 0}`;
-                existingMap.set(key, { ...item, isOffline: item.isOffline || false });
-            }
-        });
-        
-        // Add new data only if not already exists or if existing is not marked as offline
-        newData.forEach(item => {
-            if (item.timestamp) {
-                const key = `${item.timestamp}_${item.glucose_level || 0}_${item.carbs || 0}_${item.insulin || 0}`;
-                const existing = existingMap.get(key);
-                
-                if (!existing || !existing.isOffline) {
-                    existingMap.set(key, { ...item, isOffline: false });
-                }
-            }
-        });
-        
-        // Return merged array sorted by timestamp
-        const mergedArray = Array.from(existingMap.values());
-        return mergedArray.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+        // For offline-only app, just return the new data
+        return Array.isArray(newData) ? newData : (Array.isArray(existingData) ? existingData : []);
     }
     
-    // Mark entries created offline to protect from overwrites
+    // Pure offline app - no need for offline marking
     markOfflineEntries(data) {
-        if (!navigator.onLine && Array.isArray(data)) {
-            data.forEach(item => {
-                if (!item.hasOwnProperty('isOffline')) {
-                    item.isOffline = true;
-                    item.offlineCreated = new Date().toISOString();
-                }
-            });
-        }
+        // All data is offline in this standalone app
+        console.log('Pure offline app - all data is local');
     }
     
     // Save to IndexedDB
@@ -1077,33 +1039,23 @@ elif st.session_state.input_type == 'insulin':
                 const isInstalled = window.matchMedia('(display-mode: standalone)').matches;
                 const canInstall = !!window.deferredPrompt || !isInstalled;
                 
-                // Check for protected offline entries
-                const protectedCount = localStorage.getItem('protected_offline_entries') || '0';
-                const hasOfflineData = localStorage.getItem('has_offline_data') === 'true';
-                
                 const statusDiv = document.getElementById('pwa-status-container');
                 statusDiv.innerHTML = `
                     <div style="padding: 15px; background: linear-gradient(135deg, #e3f2fd, #f3e5f5); 
                                border-radius: 10px; margin: 10px 0; border-left: 4px solid #1976d2;">
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 10px;">
                             <div>
-                                <strong>🔄 存储状态:</strong> ${info.hasData ? '✅ 已保存' : '❌ 无数据'}<br>
+                                <strong>🔄 本地存储:</strong> ${info.hasData ? '✅ 已保存' : '❌ 无数据'}<br>
                                 <small>记录数: ${info.recordCount || 0} | 大小: ${(info.dataSize/1024).toFixed(1)} KB</small>
                             </div>
                             <div>
-                                <strong>🌐 网络状态:</strong> ${info.isOnline ? '🟢 在线' : '🔴 离线'}<br>
+                                <strong>📲 应用状态:</strong> ${isInstalled ? '✅ 已安装' : '📥 可安装'}<br>
                                 <small>存储类型: ${info.storageType}</small>
                             </div>
                         </div>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 10px;">
-                            <div>
-                                <strong>📲 PWA状态:</strong> ${isInstalled ? '✅ 已安装为应用' : '📥 可安装为应用'}<br>
-                                <small>支持离线使用、后台同步和推送通知</small>
-                            </div>
-                            <div>
-                                <strong>🛡️ 离线保护:</strong> ${hasOfflineData ? `🟢 已保护 ${protectedCount} 条离线记录` : '⚪ 暂无离线数据'}<br>
-                                <small>${hasOfflineData ? '离线数据不会被服务器数据覆盖' : '数据同步时自动启用保护'}</small>
-                            </div>
+                        <div style="text-align: center; padding: 10px; background: rgba(76, 175, 80, 0.1); border-radius: 8px;">
+                            <strong>🏠 独立离线应用</strong><br>
+                            <small>所有数据保存在您的设备本地，完全离线可用，隐私安全</small>
                         </div>
                     </div>
                 `;
@@ -1168,14 +1120,14 @@ elif st.session_state.input_type == 'insulin':
     # PWA features info
     with st.expander("🚀 PWA功能说明", expanded=False):
         st.markdown("""
-        **渐进式Web应用 (PWA) 功能:**
+        **独立离线应用 (PWA) 功能:**
         
-        🔸 **离线访问**: 无网络时仍可使用应用和查看数据
+        🔸 **完全离线**: 无网络时完全可用，不依赖服务器
         🔸 **应用安装**: 可安装到手机主屏幕，像原生应用一样使用
-        🔸 **智能数据保护**: 离线创建的数据永远不会被服务器数据覆盖
-        🔸 **冲突解决**: 自动合并本地和服务器数据，优先保护用户离线工作
-        🔸 **多重存储**: IndexedDB + localStorage 双重备份确保数据安全
-        🔸 **后台同步**: 网络恢复时自动同步，但保护离线数据完整性
+        🔸 **个人数据**: 每个用户拥有独立的本地数据存储
+        🔸 **数据安全**: IndexedDB + localStorage 双重本地备份
+        🔸 **隐私保护**: 所有数据保存在设备本地，不会上传到服务器
+        🔸 **数据导出**: 支持JSON格式导出，便于备份和转移
         🔸 **推送通知**: 支持健康提醒和血糖警告通知
         🔸 **快速启动**: 缓存技术确保快速加载
         
@@ -1186,33 +1138,24 @@ elif st.session_state.input_type == 'insulin':
         4. 可像普通应用一样从主屏幕启动
         """)
         
-    st.info("💡 PWA技术实现完全离线数据存储，支持IndexedDB和localStorage双重备份")
+    st.info("💡 独立离线应用，所有数据保存在您的设备本地，完全离线可用，隐私安全")
     
-    # Display offline protection status
+    # Display offline app status
     components.html("""
-    <div id="offline-protection-status"></div>
+    <div id="offline-app-status"></div>
     <script>
-        function showOfflineProtectionStatus() {
-            const hasOfflineData = localStorage.getItem('has_offline_data') === 'true';
-            const protectedCount = localStorage.getItem('protected_offline_entries') || '0';
-            
-            if (hasOfflineData && parseInt(protectedCount) > 0) {
-                const statusDiv = document.getElementById('offline-protection-status');
-                statusDiv.innerHTML = `
-                    <div style="background: linear-gradient(135deg, #d4edda, #c3e6cb); 
-                               padding: 10px; border-radius: 8px; margin: 10px 0; 
-                               border-left: 4px solid #28a745;">
-                        🛡️ <strong>离线数据保护活跃</strong> - 已保护 ${protectedCount} 条离线记录免被覆盖
-                    </div>
-                `;
-            }
+        function showOfflineAppStatus() {
+            const statusDiv = document.getElementById('offline-app-status');
+            statusDiv.innerHTML = `
+                <div style="background: linear-gradient(135deg, #e8f5e8, #d4edda); 
+                           padding: 10px; border-radius: 8px; margin: 10px 0; 
+                           border-left: 4px solid #28a745;">
+                    🏠 <strong>纯离线应用模式</strong> - 所有数据完全保存在您的设备本地
+                </div>
+            `;
         }
         
-        showOfflineProtectionStatus();
-        
-        // Update status when network changes
-        window.addEventListener('online', showOfflineProtectionStatus);
-        window.addEventListener('offline', showOfflineProtectionStatus);
+        showOfflineAppStatus();
     </script>
     """, height=60)
 
