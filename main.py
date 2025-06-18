@@ -868,7 +868,7 @@ def generate_daily_summary(selected_date):
             summary_lines.append(f" {time_str} => {insulin_dose}U {row['insulin_type']}")
         
         # Meal record
-        if row['carbs'] > 0 and row['food_details']:
+        if row['carbs'] >= 0 and row['food_details']:
             carbs_total = int(row['carbs']) if float(row['carbs']).is_integer() else row['carbs']
             summary_lines.append(f" {time_str} => {row['food_details']} [{carbs_total}g]")
     
