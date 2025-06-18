@@ -2120,11 +2120,10 @@ else:
                             st.success("血糖记录已删除")
                             st.rerun()
                         
-                        # Display record text inline with button using CSS
+                        # Display record text using CSS positioning
                         st.markdown(f"""
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: -35px; margin-bottom: 5px; padding-right: 60px;">
+                        <div style="margin-top: -35px; margin-bottom: 5px; padding-right: 60px;">
                             <span><strong>{row['timestamp'].strftime('%Y-%m-%d %H:%M')}</strong> | {glucose_mmol} mmol/L | {status}</span>
-                            <span style="color: #ff4b4b; font-size: 14px; font-weight: bold;">×</span>
                         </div>
                         """, unsafe_allow_html=True)
                 
@@ -2182,11 +2181,10 @@ else:
                             st.success("胰岛素记录已删除")
                             st.rerun()
                         
-                        # Display record text inline with button using CSS
+                        # Display record text using CSS positioning
                         st.markdown(f"""
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: -35px; margin-bottom: 5px; padding-right: 60px;">
+                        <div style="margin-top: -35px; margin-bottom: 5px; padding-right: 60px;">
                             <span><strong>{row['timestamp'].strftime('%Y-%m-%d %H:%M')}</strong> | {row['insulin']:.1f}单位 | {insulin_type} | {injection_site}</span>
-                            <span style="color: #ff4b4b; font-size: 14px; font-weight: bold;">×</span>
                         </div>
                         """, unsafe_allow_html=True)
                 
@@ -2246,11 +2244,10 @@ else:
                             st.success("饮食记录已删除")
                             st.rerun()
                         
-                        # Display record text inline with button using CSS
+                        # Display record text using CSS positioning
                         st.markdown(f"""
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: -35px; margin-bottom: 5px; padding-right: 60px;">
+                        <div style="margin-top: -35px; margin-bottom: 5px; padding-right: 60px;">
                             <span><strong>{row['timestamp'].strftime('%Y-%m-%d %H:%M')}</strong> | {row['carbs']:.1f}g</span>
-                            <span style="color: #ff4b4b; font-size: 14px; font-weight: bold;">×</span>
                         </div>
                         """, unsafe_allow_html=True)
                     
