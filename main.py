@@ -2142,52 +2142,25 @@ else:
                         </style>
                         """, unsafe_allow_html=True)
                         
-                        # Native browser popup confirmation
-                        st.markdown(f"""
-                        <script>
-                        function deleteGlucose{idx}() {{
-                            if (confirm('⚠️ 确定要删除此血糖记录吗？\\n\\n此操作无法撤销！')) {{
-                                // Set session storage flag and reload page
-                                sessionStorage.setItem('delete_glucose_{idx}', 'true');
-                                window.location.reload();
-                            }}
-                        }}
+                        if st.button("×", key=f"delete_glucose_{idx}"):
+                            # Set confirmation state
+                            st.session_state[f"confirm_delete_glucose_{idx}"] = True
                         
-                        // Check if delete was confirmed on page load
-                        if (sessionStorage.getItem('delete_glucose_{idx}') === 'true') {{
-                            sessionStorage.removeItem('delete_glucose_{idx}');
-                            // Trigger the hidden button
-                            setTimeout(() => {{
-                                const btn = document.querySelector('[data-testid="baseButton-primary"][title="delete_glucose_{idx}"]');
-                                if (btn) btn.click();
-                            }}, 100);
-                        }}
-                        </script>
-                        
-                        <button onclick="deleteGlucose{idx}()" style="
-                            background: #ff4b4b; color: white; border: none; 
-                            border-radius: 4px; padding: 4px 8px; font-size: 12px; 
-                            cursor: pointer; display: inline-flex; align-items: center;
-                            height: 32px; width: 32px; justify-content: center;">
-                            ×
-                        </button>
-                        """, unsafe_allow_html=True)
-                        
-                        # Hidden trigger button
-                        if st.button("", key=f"delete_glucose_{idx}", help=f"delete_glucose_{idx}"):
-                            st.session_state.glucose_data = st.session_state.glucose_data.drop(idx).reset_index(drop=True)
-                            save_persistent_data()
-                            st.success("血糖记录已删除")
-                            st.rerun()
-                        
-                        # Hide the trigger button with CSS
-                        st.markdown(f"""
-                        <style>
-                        button[title="delete_glucose_{idx}"] {{
-                            display: none !important;
-                        }}
-                        </style>
-                        """, unsafe_allow_html=True)
+                        # Show confirmation dialog if needed
+                        if st.session_state.get(f"confirm_delete_glucose_{idx}", False):
+                            st.warning("确定要删除此血糖记录吗？")
+                            col_yes, col_no = st.columns(2)
+                            with col_yes:
+                                if st.button("确定删除", key=f"confirm_yes_glucose_{idx}", type="primary"):
+                                    st.session_state.glucose_data = st.session_state.glucose_data.drop(idx).reset_index(drop=True)
+                                    save_persistent_data()
+                                    del st.session_state[f"confirm_delete_glucose_{idx}"]
+                                    st.success("血糖记录已删除")
+                                    st.rerun()
+                            with col_no:
+                                if st.button("取消", key=f"confirm_no_glucose_{idx}"):
+                                    del st.session_state[f"confirm_delete_glucose_{idx}"]
+                                    st.rerun()
                 
                 # Glucose statistics
                 col1, col2, col3, col4 = st.columns(4)
@@ -2265,32 +2238,25 @@ else:
                         </style>
                         """, unsafe_allow_html=True)
                         
-                        # JavaScript popup confirmation button
-                        st.markdown(f"""
-                        <button onclick="if(confirm('⚠️ 确定要删除此胰岛素记录吗？\\n\\n此操作无法撤销！')){{
-                            // Find and trigger the hidden Streamlit button
-                            const buttons = window.parent.document.querySelectorAll('button[kind=\\"primary\\"]');
-                            for(let btn of buttons) {{
-                                if(btn.textContent.includes('delete_insulin_{idx}')) {{
-                                    btn.click();
-                                    break;
-                                }}
-                            }}
-                        }}"
-                        style="background: #ff4b4b; color: white; border: none; 
-                               border-radius: 4px; padding: 4px 8px; font-size: 12px; 
-                               cursor: pointer; display: inline-flex; align-items: center;
-                               height: 32px; width: 32px; justify-content: center;">
-                            ×
-                        </button>
-                        """, unsafe_allow_html=True)
+                        if st.button("×", key=f"delete_insulin_{idx}"):
+                            # Set confirmation state
+                            st.session_state[f"confirm_delete_insulin_{idx}"] = True
                         
-                        # Hidden delete button (triggered by JavaScript)
-                        if st.button(f"delete_insulin_{idx}", key=f"delete_insulin_{idx}", type="primary"):
-                            st.session_state.glucose_data = st.session_state.glucose_data.drop(idx).reset_index(drop=True)
-                            save_persistent_data()
-                            st.success("胰岛素记录已删除")
-                            st.rerun()
+                        # Show confirmation dialog if needed
+                        if st.session_state.get(f"confirm_delete_insulin_{idx}", False):
+                            st.warning("确定要删除此胰岛素记录吗？")
+                            col_yes, col_no = st.columns(2)
+                            with col_yes:
+                                if st.button("确定删除", key=f"confirm_yes_insulin_{idx}", type="primary"):
+                                    st.session_state.glucose_data = st.session_state.glucose_data.drop(idx).reset_index(drop=True)
+                                    save_persistent_data()
+                                    del st.session_state[f"confirm_delete_insulin_{idx}"]
+                                    st.success("胰岛素记录已删除")
+                                    st.rerun()
+                            with col_no:
+                                if st.button("取消", key=f"confirm_no_insulin_{idx}"):
+                                    del st.session_state[f"confirm_delete_insulin_{idx}"]
+                                    st.rerun()
                 
                 # Insulin statistics
                 col1, col2, col3, col4 = st.columns(4)
@@ -2370,32 +2336,25 @@ else:
                         </style>
                         """, unsafe_allow_html=True)
                         
-                        # JavaScript popup confirmation button
-                        st.markdown(f"""
-                        <button onclick="if(confirm('⚠️ 确定要删除此饮食记录吗？\\n\\n此操作无法撤销！')){{
-                            // Find and trigger the hidden Streamlit button
-                            const buttons = window.parent.document.querySelectorAll('button[kind=\\"primary\\"]');
-                            for(let btn of buttons) {{
-                                if(btn.textContent.includes('delete_meal_{idx}')) {{
-                                    btn.click();
-                                    break;
-                                }}
-                            }}
-                        }}"
-                        style="background: #ff4b4b; color: white; border: none; 
-                               border-radius: 4px; padding: 4px 8px; font-size: 12px; 
-                               cursor: pointer; display: inline-flex; align-items: center;
-                               height: 32px; width: 32px; justify-content: center;">
-                            ×
-                        </button>
-                        """, unsafe_allow_html=True)
+                        if st.button("×", key=f"delete_meal_{idx}"):
+                            # Set confirmation state
+                            st.session_state[f"confirm_delete_meal_{idx}"] = True
                         
-                        # Hidden delete button (triggered by JavaScript)
-                        if st.button(f"delete_meal_{idx}", key=f"delete_meal_{idx}", type="primary"):
-                            st.session_state.glucose_data = st.session_state.glucose_data.drop(idx).reset_index(drop=True)
-                            save_persistent_data()
-                            st.success("饮食记录已删除")
-                            st.rerun()
+                        # Show confirmation dialog if needed
+                        if st.session_state.get(f"confirm_delete_meal_{idx}", False):
+                            st.warning("确定要删除此饮食记录吗？")
+                            col_yes, col_no = st.columns(2)
+                            with col_yes:
+                                if st.button("确定删除", key=f"confirm_yes_meal_{idx}", type="primary"):
+                                    st.session_state.glucose_data = st.session_state.glucose_data.drop(idx).reset_index(drop=True)
+                                    save_persistent_data()
+                                    del st.session_state[f"confirm_delete_meal_{idx}"]
+                                    st.success("饮食记录已删除")
+                                    st.rerun()
+                            with col_no:
+                                if st.button("取消", key=f"confirm_no_meal_{idx}"):
+                                    del st.session_state[f"confirm_delete_meal_{idx}"]
+                                    st.rerun()
                     
                     # Second line: food details
                     st.caption(f"  → {food_details}")
