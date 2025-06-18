@@ -939,8 +939,12 @@ try:
 except Exception as e:
     st.error(f"初始化预测模型时发生错误: {str(e)}")
 
-# Main title
-st.title("📔 我的日記")
+# Version and title display
+col1, col2 = st.columns([1, 10])
+with col1:
+    st.caption("v2.1.0")
+with col2:
+    st.title("📔 我的日記")
 
 # Daily Summary Section
 st.markdown("### 📋 每日记录摘要")
@@ -1233,7 +1237,7 @@ elif st.session_state.input_type == 'insulin':
         min_value=0.0, 
         max_value=100.0, 
         value=None,
-        step=0.5,
+        step=1.0,
         placeholder="请输入剂量",
         key="insulin_dose"
     )
