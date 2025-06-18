@@ -970,41 +970,40 @@ with col1:
             daily_summary = generate_daily_summary(selected_date)
             
             if daily_summary:
-                # Header and copy button on same horizontal line
-                col_header, col_button = st.columns([5, 1])
+                # Prepare text for JavaScript (escape special characters)
+                escaped_summary = daily_summary.replace('`', '\\`').replace('$', '\\$').replace('\\', '\\\\').replace('\n', '\\n').replace('\r', '\\r')
                 
-                with col_header:
-                    st.markdown("### 每日摘要 (可复制)")
+                # Create truly inline header with copy button in single HTML element
+                components.html(f"""
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px;">
+                    <h4 style="margin: 0; font-size: 1.1rem; color: #262730;">每日摘要 (可复制)</h4>
+                    <button onclick="copyToClipboard()" 
+                            style="background: #ff4b4b; color: white; border: none; 
+                                   border-radius: 4px; padding: 4px 8px; font-size: 12px; 
+                                   cursor: pointer; display: inline-flex; align-items: center;">
+                        📋 复制
+                    </button>
+                </div>
                 
-                with col_button:
-                    # Use negative margin to align button with header
-                    st.markdown('<div style="margin-top: -8px;">', unsafe_allow_html=True)
-                    if st.button("📋 复制", key="copy_summary_btn", help="复制每日摘要到剪贴板"):
-                        # Prepare text for JavaScript (escape special characters)
-                        escaped_summary = daily_summary.replace('`', '\\`').replace('$', '\\$').replace('\\', '\\\\').replace('\n', '\\n').replace('\r', '\\r')
-                        
-                        # Use HTML/JavaScript to copy to clipboard
-                        components.html(f"""
-                        <script>
-                            const textToCopy = `{escaped_summary}`;
-                            navigator.clipboard.writeText(textToCopy).then(function() {{
-                                // Success - show feedback
-                                alert('每日摘要已复制到剪贴板！');
-                            }}).catch(function(err) {{
-                                console.error('Failed to copy: ', err);
-                                // Fallback for older browsers
-                                const textArea = document.createElement('textarea');
-                                textArea.value = textToCopy;
-                                document.body.appendChild(textArea);
-                                textArea.select();
-                                document.execCommand('copy');
-                                document.body.removeChild(textArea);
-                                alert('每日摘要已复制到剪贴板！');
-                            }});
-                        </script>
-                        """, height=0)
-                        st.success("已复制到剪贴板！")
-                    st.markdown('</div>', unsafe_allow_html=True)
+                <script>
+                function copyToClipboard() {{
+                    const textToCopy = `{escaped_summary}`;
+                    navigator.clipboard.writeText(textToCopy).then(function() {{
+                        alert('每日摘要已复制到剪贴板！');
+                    }}).catch(function(err) {{
+                        console.error('Failed to copy: ', err);
+                        // Fallback for older browsers
+                        const textArea = document.createElement('textarea');
+                        textArea.value = textToCopy;
+                        document.body.appendChild(textArea);
+                        textArea.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(textArea);
+                        alert('每日摘要已复制到剪贴板！');
+                    }});
+                }}
+                </script>
+                """, height=60)
                 
                 # Summary text area without label
                 st.text_area(
