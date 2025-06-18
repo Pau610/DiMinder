@@ -779,217 +779,213 @@ with col1:
 with col2:
     pass
 
-st.markdown("---")
+# Manual Data Entry Section
+st.markdown("### 📝 数据录入")
 
-# Sidebar with mobile-friendly layout
-with st.sidebar:
-    st.header("数据录入")
+# Data type selection buttons
+col1, col2, col3 = st.columns(3)
 
-    # Data type selection buttons
-    st.subheader("选择记录类型")
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        glucose_selected = st.button("血糖记录", use_container_width=True, type="primary" if st.session_state.get('input_type') == 'glucose' else "secondary")
-        if glucose_selected:
-            st.session_state.input_type = 'glucose'
-    
-    with col2:
-        meal_selected = st.button("饮食记录", use_container_width=True, type="primary" if st.session_state.get('input_type') == 'meal' else "secondary")
-        if meal_selected:
-            st.session_state.input_type = 'meal'
-    
-    with col3:
-        insulin_selected = st.button("胰岛素注射", use_container_width=True, type="primary" if st.session_state.get('input_type') == 'insulin' else "secondary")
-        if insulin_selected:
-            st.session_state.input_type = 'insulin'
-
-    # Initialize input type if not set
-    if 'input_type' not in st.session_state:
+with col1:
+    glucose_selected = st.button("血糖记录", use_container_width=True, type="primary" if st.session_state.get('input_type') == 'glucose' else "secondary")
+    if glucose_selected:
         st.session_state.input_type = 'glucose'
 
-    st.markdown("---")
+with col2:
+    meal_selected = st.button("饮食记录", use_container_width=True, type="primary" if st.session_state.get('input_type') == 'meal' else "secondary")
+    if meal_selected:
+        st.session_state.input_type = 'meal'
 
-    # Show selected input form
-    if st.session_state.input_type == 'glucose':
-        # Blood glucose input
-        with st.expander("记录血糖", expanded=True):
-            # 添加日期选择器
-            col1, col2 = st.columns(2)
-            with col1:
-                hk_today = datetime.now(HK_TZ).date()
-                record_date = st.date_input(
-                    "记录日期 (GMT+8)",
-                    hk_today,
-                    max_value=hk_today,
-                    key="glucose_date"
-                )
-            with col2:
-                # 初始化血糖记录时间状态 (HK时区)
-                if 'glucose_time_state' not in st.session_state:
-                    hk_now = datetime.now(HK_TZ)
-                    st.session_state.glucose_time_state = hk_now.strftime("%H:%M")
-                
-                time_input_str = st.text_input(
-                    "记录时间 (GMT+8)",
-                    value=st.session_state.glucose_time_state,
-                    placeholder="例如: 1430 或 14:30",
-                    help="支持格式: 1430, 14:30, 930, 9:30",
-                    key="glucose_time_input"
-                )
-                
-                # Parse the time input and update state
-                record_time = parse_time_input(time_input_str)
-                st.session_state.glucose_time_state = record_time.strftime("%H:%M")
-                
-                # Display parsed time for confirmation
-                if time_input_str:
-                    st.caption(f"解析时间: {record_time.strftime('%H:%M')}")
+with col3:
+    insulin_selected = st.button("胰岛素注射", use_container_width=True, type="primary" if st.session_state.get('input_type') == 'insulin' else "secondary")
+    if insulin_selected:
+        st.session_state.input_type = 'insulin'
 
-            glucose_mmol = st.number_input("血糖水平 (mmol/L)", min_value=2.0, max_value=22.0, value=None, step=0.1, key="glucose_level", placeholder="请输入血糖值")
+# Initialize input type if not set
+if 'input_type' not in st.session_state:
+    st.session_state.input_type = 'glucose'
 
-            if st.button("添加血糖记录", use_container_width=True):
-                if glucose_mmol is not None:
-                    record_datetime = datetime.combine(record_date, record_time)
-                    # Convert mmol/L to mg/dL for internal storage
-                    glucose_level_mgdl = glucose_mmol * 18.0182
-                    new_data = {
-                        'timestamp': record_datetime,
-                        'glucose_level': glucose_level_mgdl,
-                        'carbs': 0,
-                        'insulin': 0,
-                        'insulin_type': '',
-                        'injection_site': '',
-                        'food_details': ''
-                    }
-                    st.session_state.glucose_data = pd.concat([
-                        st.session_state.glucose_data,
-                        pd.DataFrame([new_data])
-                    ], ignore_index=True)
-                    # Immediate save with validation
-                    save_persistent_data()
-                    # Verify save was successful
-                    if os.path.exists('user_data.csv'):
-                        st.success(f"血糖记录已保存！当前共有 {len(st.session_state.glucose_data)} 条记录")
-                    else:
-                        st.error("数据保存失败，请重试")
-                else:
-                    st.error("请输入血糖值")
+st.markdown("---")
 
-    elif st.session_state.input_type == 'meal':
-        # Meal input
-        with st.expander("记录饮食", expanded=True):
-            # 添加日期选择器
-            col1, col2 = st.columns(2)
-            with col1:
-                hk_today = datetime.now(HK_TZ).date()
-                meal_date = st.date_input(
-                    "用餐日期 (GMT+8)",
-                    hk_today,
-                    max_value=hk_today,
-                    key="meal_date"
-                )
-            with col2:
-                # 初始化用餐时间状态 (HK时区)
-                if 'meal_time_state' not in st.session_state:
-                    hk_now = datetime.now(HK_TZ)
-                    st.session_state.meal_time_state = hk_now.strftime("%H:%M")
-                
-                meal_time_input_str = st.text_input(
-                    "用餐时间 (GMT+8)",
-                    value=st.session_state.meal_time_state,
-                    placeholder="例如: 1230 或 12:30",
-                    help="支持格式: 1230, 12:30, 730, 7:30",
-                    key="meal_time_input"
-                )
-                
-                # Parse the time input and update state
-                meal_time = parse_time_input(meal_time_input_str)
-                st.session_state.meal_time_state = meal_time.strftime("%H:%M")
-                
-                # Display parsed time for confirmation
-                if meal_time_input_str:
-                    st.caption(f"解析时间: {meal_time.strftime('%H:%M')}")
+# Show selected input form
+if st.session_state.input_type == 'glucose':
+    # Blood glucose input
+    st.markdown("#### 🩸 记录血糖")
+    # 添加日期选择器
+    col1, col2 = st.columns(2)
+    with col1:
+        hk_today = datetime.now(HK_TZ).date()
+        record_date = st.date_input(
+            "记录日期 (GMT+8)",
+            hk_today,
+            max_value=hk_today,
+            key="glucose_date"
+        )
+    with col2:
+        # 初始化血糖记录时间状态 (HK时区)
+        if 'glucose_time_state' not in st.session_state:
+            hk_now = datetime.now(HK_TZ)
+            st.session_state.glucose_time_state = hk_now.strftime("%H:%M")
+        
+        time_input_str = st.text_input(
+            "记录时间 (GMT+8)",
+            value=st.session_state.glucose_time_state,
+            placeholder="例如: 1430 或 14:30",
+            help="支持格式: 1430, 14:30, 930, 9:30",
+            key="glucose_time_input"
+        )
+        
+        # Parse the time input and update state
+        record_time = parse_time_input(time_input_str)
+        st.session_state.glucose_time_state = record_time.strftime("%H:%M")
+        
+        # Display parsed time for confirmation
+        if time_input_str:
+            st.caption(f"解析时间: {record_time.strftime('%H:%M')}")
 
-            # 初始化食物列表
-            if 'meal_foods' not in st.session_state:
-                st.session_state.meal_foods = []
+    glucose_mmol = st.number_input("血糖水平 (mmol/L)", min_value=2.0, max_value=22.0, value=None, step=0.1, key="glucose_level", placeholder="请输入血糖值")
 
-            # 添加食物输入
-            st.write("添加食物:")
-            col_food, col_carbs, col_add = st.columns([3, 2, 1])
-            
-            with col_food:
-                food_name = st.text_input("食物名称", key="food_name_input", placeholder="例如：米饭、面条、苹果...")
-            
-            with col_carbs:
-                carbs_amount = st.number_input("碳水化合物 (克)", min_value=0.0, max_value=500.0, value=None, step=0.1, key="carbs_input", placeholder="请输入克数")
-            
-            with col_add:
-                st.write("")  # 空行对齐
-                if st.button("➕", key="add_food_btn", help="添加食物"):
-                    if food_name and carbs_amount is not None and carbs_amount > 0:
-                        st.session_state.meal_foods.append({
-                            'food': food_name,
-                            'carbs': carbs_amount
-                        })
-                        st.rerun()
-
-            # 显示已添加的食物
-            if st.session_state.meal_foods:
-                st.write("本餐食物:")
-                total_carbs = 0
-                for i, food_item in enumerate(st.session_state.meal_foods):
-                    col_display, col_remove = st.columns([4, 1])
-                    with col_display:
-                        st.write(f"• {food_item['food']}: {food_item['carbs']}g 碳水化合物")
-                        total_carbs += food_item['carbs']
-                    with col_remove:
-                        if st.button("🗑️", key=f"remove_food_{i}", help="删除"):
-                            st.session_state.meal_foods.pop(i)
-                            st.rerun()
-                
-                st.write(f"**总碳水化合物: {total_carbs:.1f}g**")
-
-                if st.button("添加饮食记录", use_container_width=True):
-                    meal_datetime = datetime.combine(meal_date, meal_time)
-                    # Create detailed food description
-                    food_list = [f"{item['food']} ({item['carbs']}g碳水)" for item in st.session_state.meal_foods]
-                    food_details = "; ".join(food_list)
-                    
-                    new_meal = {
-                        'timestamp': meal_datetime,
-                        'glucose_level': 0,
-                        'carbs': total_carbs,
-                        'insulin': 0,
-                        'insulin_type': '',
-                        'injection_site': '',
-                        'food_details': food_details
-                    }
-                    st.session_state.glucose_data = pd.concat([
-                        st.session_state.glucose_data,
-                        pd.DataFrame([new_meal])
-                    ], ignore_index=True)
-                    # Immediate save with validation
-                    save_persistent_data()
-                    # Verify save was successful
-                    if os.path.exists('user_data.csv'):
-                        # 清空食物列表
-                        st.session_state.meal_foods = []
-                        st.success(f"饮食记录已保存！当前共有 {len(st.session_state.glucose_data)} 条记录")
-                        st.rerun()
-                    else:
-                        st.error("数据保存失败，请重试")
+    if st.button("添加血糖记录", use_container_width=True):
+        if glucose_mmol is not None:
+            record_datetime = datetime.combine(record_date, record_time)
+            # Convert mmol/L to mg/dL for internal storage
+            glucose_level_mgdl = glucose_mmol * 18.0182
+            new_data = {
+                'timestamp': record_datetime,
+                'glucose_level': glucose_level_mgdl,
+                'carbs': 0,
+                'insulin': 0,
+                'insulin_type': '',
+                'injection_site': '',
+                'food_details': ''
+            }
+            st.session_state.glucose_data = pd.concat([
+                st.session_state.glucose_data,
+                pd.DataFrame([new_data])
+            ], ignore_index=True)
+            # Immediate save with validation
+            save_persistent_data()
+            # Verify save was successful
+            if os.path.exists('user_data.csv'):
+                st.success(f"血糖记录已保存！当前共有 {len(st.session_state.glucose_data)} 条记录")
             else:
-                st.info("请添加食物和碳水化合物含量")
+                st.error("数据保存失败，请重试")
+        else:
+            st.error("请输入血糖值")
 
-    elif st.session_state.input_type == 'insulin':
-        # Insulin injection input
-        with st.expander("记录胰岛素注射", expanded=True):
-            # 添加日期选择器
-            col1, col2 = st.columns(2)
-            with col1:
-                hk_today = datetime.now(HK_TZ).date()
+elif st.session_state.input_type == 'meal':
+    # Meal input
+    st.markdown("#### 🍽️ 记录饮食")
+    # 添加日期选择器
+    col1, col2 = st.columns(2)
+    with col1:
+        hk_today = datetime.now(HK_TZ).date()
+        meal_date = st.date_input(
+            "用餐日期 (GMT+8)",
+            hk_today,
+            max_value=hk_today,
+            key="meal_date"
+        )
+    with col2:
+        # 初始化用餐时间状态 (HK时区)
+        if 'meal_time_state' not in st.session_state:
+            hk_now = datetime.now(HK_TZ)
+            st.session_state.meal_time_state = hk_now.strftime("%H:%M")
+        
+        meal_time_input_str = st.text_input(
+            "用餐时间 (GMT+8)",
+            value=st.session_state.meal_time_state,
+            placeholder="例如: 1230 或 12:30",
+            help="支持格式: 1230, 12:30, 730, 7:30",
+            key="meal_time_input"
+        )
+        
+        # Parse the time input and update state
+        meal_time = parse_time_input(meal_time_input_str)
+        st.session_state.meal_time_state = meal_time.strftime("%H:%M")
+        
+        # Display parsed time for confirmation
+        if meal_time_input_str:
+            st.caption(f"解析时间: {meal_time.strftime('%H:%M')}")
+
+    # 初始化食物列表
+    if 'meal_foods' not in st.session_state:
+        st.session_state.meal_foods = []
+
+    # 添加食物输入
+    st.write("添加食物:")
+    col_food, col_carbs, col_add = st.columns([3, 2, 1])
+    
+    with col_food:
+        food_name = st.text_input("食物名称", key="food_name_input", placeholder="例如：米饭、面条、苹果...")
+    
+    with col_carbs:
+        carbs_amount = st.number_input("碳水化合物 (克)", min_value=0.0, max_value=500.0, value=None, step=0.1, key="carbs_input", placeholder="请输入克数")
+    
+    with col_add:
+        st.write("")  # 空行对齐
+        if st.button("➕", key="add_food_btn", help="添加食物"):
+            if food_name and carbs_amount is not None and carbs_amount > 0:
+                st.session_state.meal_foods.append({
+                    'food': food_name,
+                    'carbs': carbs_amount
+                })
+                st.rerun()
+
+    # 显示已添加的食物
+    if st.session_state.meal_foods:
+        st.write("本餐食物:")
+        total_carbs = 0
+        for i, food_item in enumerate(st.session_state.meal_foods):
+            col_display, col_remove = st.columns([4, 1])
+            with col_display:
+                st.write(f"• {food_item['food']}: {food_item['carbs']}g 碳水化合物")
+                total_carbs += food_item['carbs']
+            with col_remove:
+                if st.button("🗑️", key=f"remove_food_{i}", help="删除"):
+                    st.session_state.meal_foods.pop(i)
+                    st.rerun()
+        
+        st.write(f"**总碳水化合物: {total_carbs:.1f}g**")
+
+        if st.button("添加饮食记录", use_container_width=True):
+            meal_datetime = datetime.combine(meal_date, meal_time)
+            # Create detailed food description
+            food_list = [f"{item['food']} ({item['carbs']}g碳水)" for item in st.session_state.meal_foods]
+            food_details = "; ".join(food_list)
+            
+            new_meal = {
+                'timestamp': meal_datetime,
+                'glucose_level': 0,
+                'carbs': total_carbs,
+                'insulin': 0,
+                'insulin_type': '',
+                'injection_site': '',
+                'food_details': food_details
+            }
+            st.session_state.glucose_data = pd.concat([
+                st.session_state.glucose_data,
+                pd.DataFrame([new_meal])
+            ], ignore_index=True)
+            # Immediate save with validation
+            save_persistent_data()
+            # Verify save was successful
+            if os.path.exists('user_data.csv'):
+                # 清空食物列表
+                st.session_state.meal_foods = []
+                st.success(f"饮食记录已保存！当前共有 {len(st.session_state.glucose_data)} 条记录")
+                st.rerun()
+            else:
+                st.error("数据保存失败，请重试")
+    else:
+        st.info("请添加食物和碳水化合物含量")
+
+elif st.session_state.input_type == 'insulin':
+    # Insulin injection input
+    st.markdown("#### 💉 记录胰岛素注射")
+    # 添加日期选择器
+    col1, col2 = st.columns(2)
+    with col1:
+        hk_today = datetime.now(HK_TZ).date()
                 injection_date = st.date_input(
                     "注射日期 (GMT+8)",
                     hk_today,
