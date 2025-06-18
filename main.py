@@ -970,11 +970,15 @@ with col1:
             daily_summary = generate_daily_summary(selected_date)
             
             if daily_summary:
-                # Header with inline copy button
-                col_header, col_copy = st.columns([4, 1])
+                # Header and copy button on same horizontal line
+                col_header, col_button = st.columns([5, 1])
+                
                 with col_header:
-                    st.subheader("每日摘要 (可复制)")
-                with col_copy:
+                    st.markdown("### 每日摘要 (可复制)")
+                
+                with col_button:
+                    # Use negative margin to align button with header
+                    st.markdown('<div style="margin-top: -8px;">', unsafe_allow_html=True)
                     if st.button("📋 复制", key="copy_summary_btn", help="复制每日摘要到剪贴板"):
                         # Prepare text for JavaScript (escape special characters)
                         escaped_summary = daily_summary.replace('`', '\\`').replace('$', '\\$').replace('\\', '\\\\').replace('\n', '\\n').replace('\r', '\\r')
@@ -1000,6 +1004,7 @@ with col1:
                         </script>
                         """, height=0)
                         st.success("已复制到剪贴板！")
+                    st.markdown('</div>', unsafe_allow_html=True)
                 
                 # Summary text area without label
                 st.text_area(
