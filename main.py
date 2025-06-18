@@ -2110,17 +2110,23 @@ else:
                     glucose_mmol = round(row['glucose_level'] / 18.0182, 1)
                     status = '严重低血糖' if row['glucose_level'] <= 40 else ('低血糖' if row['glucose_level'] < 70 else ('正常' if row['glucose_level'] <= 180 else '高血糖'))
                     
-                    # Create truly inline layout with record and delete button
-                    col1, col2 = st.columns([0.95, 0.05], gap="small")
-                    with col1:
-                        st.write(f"**{row['timestamp'].strftime('%Y-%m-%d %H:%M')}** | {glucose_mmol} mmol/L | {status}")
-                    with col2:
-                        # Use a compact delete button
-                        if st.button("×", key=f"delete_glucose_{idx}", help="删除", type="secondary"):
+                    # Create container with inline layout
+                    container = st.container()
+                    with container:
+                        # Check for deletion first
+                        if st.button("×", key=f"delete_glucose_{idx}"):
                             st.session_state.glucose_data = st.session_state.glucose_data.drop(idx).reset_index(drop=True)
                             save_persistent_data()
                             st.success("血糖记录已删除")
                             st.rerun()
+                        
+                        # Display record text inline with button using CSS
+                        st.markdown(f"""
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: -40px; margin-bottom: 5px;">
+                            <span><strong>{row['timestamp'].strftime('%Y-%m-%d %H:%M')}</strong> | {glucose_mmol} mmol/L | {status}</span>
+                            <span style="color: #666; font-size: 12px;">删除 ↑</span>
+                        </div>
+                        """, unsafe_allow_html=True)
                 
                 # Glucose statistics
                 col1, col2, col3, col4 = st.columns(4)
@@ -2166,16 +2172,23 @@ else:
                     insulin_type = row['insulin_type'] if pd.notna(row['insulin_type']) else '未指定'
                     injection_site = row['injection_site'] if pd.notna(row['injection_site']) else '未指定'
                     
-                    # Create truly inline layout with record and delete button
-                    col1, col2 = st.columns([0.95, 0.05], gap="small")
-                    with col1:
-                        st.write(f"**{row['timestamp'].strftime('%Y-%m-%d %H:%M')}** | {row['insulin']:.1f}单位 | {insulin_type} | {injection_site}")
-                    with col2:
-                        if st.button("×", key=f"delete_insulin_{idx}", help="删除", type="secondary"):
+                    # Create container with inline layout
+                    container = st.container()
+                    with container:
+                        # Check for deletion first
+                        if st.button("×", key=f"delete_insulin_{idx}"):
                             st.session_state.glucose_data = st.session_state.glucose_data.drop(idx).reset_index(drop=True)
                             save_persistent_data()
                             st.success("胰岛素记录已删除")
                             st.rerun()
+                        
+                        # Display record text inline with button using CSS
+                        st.markdown(f"""
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: -40px; margin-bottom: 5px;">
+                            <span><strong>{row['timestamp'].strftime('%Y-%m-%d %H:%M')}</strong> | {row['insulin']:.1f}单位 | {insulin_type} | {injection_site}</span>
+                            <span style="color: #666; font-size: 12px;">删除 ↑</span>
+                        </div>
+                        """, unsafe_allow_html=True)
                 
                 # Insulin statistics
                 col1, col2, col3, col4 = st.columns(4)
@@ -2223,16 +2236,23 @@ else:
                     # Create layout with functional delete button
                     food_details = row['food_details'] if pd.notna(row['food_details']) and row['food_details'] else '未记录详情'
                     
-                    # First line with datetime, carbs and delete button
-                    col1, col2 = st.columns([0.95, 0.05], gap="small")
-                    with col1:
-                        st.write(f"**{row['timestamp'].strftime('%Y-%m-%d %H:%M')}** | {row['carbs']:.1f}g")
-                    with col2:
-                        if st.button("×", key=f"delete_meal_{idx}", help="删除", type="secondary"):
+                    # Create container with inline layout for first line
+                    container = st.container()
+                    with container:
+                        # Check for deletion first
+                        if st.button("×", key=f"delete_meal_{idx}"):
                             st.session_state.glucose_data = st.session_state.glucose_data.drop(idx).reset_index(drop=True)
                             save_persistent_data()
                             st.success("饮食记录已删除")
                             st.rerun()
+                        
+                        # Display record text inline with button using CSS
+                        st.markdown(f"""
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: -40px; margin-bottom: 5px;">
+                            <span><strong>{row['timestamp'].strftime('%Y-%m-%d %H:%M')}</strong> | {row['carbs']:.1f}g</span>
+                            <span style="color: #666; font-size: 12px;">删除 ↑</span>
+                        </div>
+                        """, unsafe_allow_html=True)
                     
                     # Second line: food details
                     st.caption(f"  → {food_details}")
