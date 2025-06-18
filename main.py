@@ -20,17 +20,50 @@ st.set_page_config(
     initial_sidebar_state="collapsed"  # 在移动端默认收起侧边栏
 )
 
-# PWA Meta tags and manifest
+# PWA Meta tags and manifest for iOS app conversion
 st.markdown("""
-<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<!-- Basic PWA Meta Tags -->
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#1f77b4">
+<meta name="description" content="专业的糖尿病健康数据管理和预测应用">
+
+<!-- iOS Specific Meta Tags -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="我的日記">
-<meta name="description" content="专业的糖尿病健康数据管理和预测应用">
+<meta name="apple-touch-fullscreen" content="yes">
+<meta name="format-detection" content="telephone=no">
+
+<!-- Manifest -->
 <link rel="manifest" href="/static/manifest.json">
-<link rel="apple-touch-icon" href="/generated-icon.png">
-<link rel="icon" type="image/png" href="/generated-icon.png">
+
+<!-- iOS Icons -->
+<link rel="apple-touch-icon" sizes="57x57" href="/generated-icon.png">
+<link rel="apple-touch-icon" sizes="60x60" href="/generated-icon.png">
+<link rel="apple-touch-icon" sizes="72x72" href="/generated-icon.png">
+<link rel="apple-touch-icon" sizes="76x76" href="/generated-icon.png">
+<link rel="apple-touch-icon" sizes="114x114" href="/generated-icon.png">
+<link rel="apple-touch-icon" sizes="120x120" href="/generated-icon.png">
+<link rel="apple-touch-icon" sizes="144x144" href="/generated-icon.png">
+<link rel="apple-touch-icon" sizes="152x152" href="/generated-icon.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/generated-icon.png">
+
+<!-- iOS Splash Screens -->
+<link rel="apple-touch-startup-image" href="/generated-icon.png" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2)">
+<link rel="apple-touch-startup-image" href="/generated-icon.png" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3)">
+<link rel="apple-touch-startup-image" href="/generated-icon.png" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)">
+<link rel="apple-touch-startup-image" href="/generated-icon.png" media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3)">
+<link rel="apple-touch-startup-image" href="/generated-icon.png" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)">
+
+<!-- Standard Icons -->
+<link rel="icon" type="image/png" sizes="32x32" href="/generated-icon.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/generated-icon.png">
+<link rel="shortcut icon" href="/generated-icon.png">
+
+<!-- Microsoft Tiles -->
+<meta name="msapplication-TileColor" content="#1f77b4">
+<meta name="msapplication-TileImage" content="/generated-icon.png">
+<meta name="msapplication-config" content="none">
 """, unsafe_allow_html=True)
 
 # Custom CSS for mobile-friendly design and localStorage
@@ -57,6 +90,34 @@ st.markdown("""
         padding: 0.5rem;
     }
 
+    /* iOS PWA 优化 */
+    @supports (-webkit-overflow-scrolling: touch) {
+        body {
+            -webkit-overflow-scrolling: touch;
+        }
+    }
+    
+    /* iOS Safe Area 支持 */
+    @supports (padding: max(0px)) {
+        .main > div {
+            padding-left: max(1rem, env(safe-area-inset-left));
+            padding-right: max(1rem, env(safe-area-inset-right));
+        }
+    }
+    
+    /* 防止iOS缩放 */
+    input, select, textarea {
+        font-size: 16px !important;
+    }
+    
+    /* iOS PWA 全屏适配 */
+    @media all and (display-mode: standalone) {
+        body {
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+    }
+
     /* 响应式布局调整 */
     @media (max-width: 768px) {
         .element-container {
@@ -66,6 +127,12 @@ st.markdown("""
         /* 调整图表容器 */
         .plotly-graph-div {
             height: 300px !important;
+        }
+        
+        /* iOS 移动端优化 */
+        .stButton > button {
+            min-height: 44px;
+            -webkit-tap-highlight-color: transparent;
         }
     }
 </style>
