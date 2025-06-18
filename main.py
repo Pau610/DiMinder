@@ -2106,34 +2106,22 @@ else:
                 glucose_records = glucose_data.head(30)
                 
                 for idx, row in glucose_records.iterrows():
-                    # Single line display with proper spacing
+                    # Single line display with inline delete button
                     glucose_mmol = round(row['glucose_level'] / 18.0182, 1)
                     status = '严重低血糖' if row['glucose_level'] <= 40 else ('低血糖' if row['glucose_level'] < 70 else ('正常' if row['glucose_level'] <= 180 else '高血糖'))
                     
-                    col1, col2 = st.columns([8, 1])
-                    with col1:
-                        st.write(f"{row['timestamp'].strftime('%Y-%m-%d %H:%M')} | {glucose_mmol} mmol/L | {status}")
-                    with col2:
-                        if st.button("🗑️", key=f"delete_glucose_{idx}", help="删除记录"):
-                            if f"confirm_delete_glucose_{idx}" not in st.session_state:
-                                st.session_state[f"confirm_delete_glucose_{idx}"] = True
-                                st.rerun()
-                            
-                    # Confirmation dialog
-                    if f"confirm_delete_glucose_{idx}" in st.session_state:
-                        st.warning(f"确认删除 {row['timestamp'].strftime('%Y-%m-%d %H:%M')} 的血糖记录？")
-                        col_yes, col_no = st.columns(2)
-                        with col_yes:
-                            if st.button("确认删除", key=f"confirm_yes_{idx}"):
-                                st.session_state.glucose_data = st.session_state.glucose_data.drop(idx).reset_index(drop=True)
-                                save_persistent_data()
-                                del st.session_state[f"confirm_delete_glucose_{idx}"]
-                                st.success("记录已删除")
-                                st.rerun()
-                        with col_no:
-                            if st.button("取消", key=f"confirm_no_{idx}"):
-                                del st.session_state[f"confirm_delete_glucose_{idx}"]
-                                st.rerun()
+                    # Create single HTML component with true inline layout
+                    components.html(f"""
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px;">
+                        <span style="font-size: 14px; color: #262730;">{row['timestamp'].strftime('%Y-%m-%d %H:%M')} | {glucose_mmol} mmol/L | {status}</span>
+                        <button onclick="if(confirm('确认删除此血糖记录？')) {{
+                                    window.parent.postMessage({{type: 'streamlit_delete', idx: '{idx}'}}, '*');
+                                }}" 
+                                style="background: #ff4b4b; color: white; border: none; 
+                                       border-radius: 3px; padding: 3px 7px; font-size: 12px; 
+                                       cursor: pointer; margin-left: 10px;">×</button>
+                    </div>
+                    """, height=30)
                 
                 # Glucose statistics
                 col1, col2, col3, col4 = st.columns(4)
@@ -2175,34 +2163,22 @@ else:
                 insulin_records = insulin_data.head(30)
                 
                 for idx, row in insulin_records.iterrows():
-                    # Single line display with proper spacing
+                    # Single line display with inline delete button
                     insulin_type = row['insulin_type'] if pd.notna(row['insulin_type']) else '未指定'
                     injection_site = row['injection_site'] if pd.notna(row['injection_site']) else '未指定'
                     
-                    col1, col2 = st.columns([8, 1])
-                    with col1:
-                        st.write(f"{row['timestamp'].strftime('%Y-%m-%d %H:%M')} | {row['insulin']:.1f}单位 | {insulin_type} | {injection_site}")
-                    with col2:
-                        if st.button("🗑️", key=f"delete_insulin_{idx}", help="删除记录"):
-                            if f"confirm_delete_insulin_{idx}" not in st.session_state:
-                                st.session_state[f"confirm_delete_insulin_{idx}"] = True
-                                st.rerun()
-                            
-                    # Confirmation dialog
-                    if f"confirm_delete_insulin_{idx}" in st.session_state:
-                        st.warning(f"确认删除 {row['timestamp'].strftime('%Y-%m-%d %H:%M')} 的胰岛素注射记录？")
-                        col_yes, col_no = st.columns(2)
-                        with col_yes:
-                            if st.button("确认删除", key=f"confirm_insulin_yes_{idx}"):
-                                st.session_state.glucose_data = st.session_state.glucose_data.drop(idx).reset_index(drop=True)
-                                save_persistent_data()
-                                del st.session_state[f"confirm_delete_insulin_{idx}"]
-                                st.success("记录已删除")
-                                st.rerun()
-                        with col_no:
-                            if st.button("取消", key=f"confirm_insulin_no_{idx}"):
-                                del st.session_state[f"confirm_delete_insulin_{idx}"]
-                                st.rerun()
+                    # Create single HTML component with true inline layout
+                    components.html(f"""
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px;">
+                        <span style="font-size: 14px; color: #262730;">{row['timestamp'].strftime('%Y-%m-%d %H:%M')} | {row['insulin']:.1f}单位 | {insulin_type} | {injection_site}</span>
+                        <button onclick="if(confirm('确认删除此胰岛素注射记录？')) {{
+                                    window.parent.postMessage({{type: 'streamlit_delete', idx: '{idx}'}}, '*');
+                                }}" 
+                                style="background: #ff4b4b; color: white; border: none; 
+                                       border-radius: 3px; padding: 3px 7px; font-size: 12px; 
+                                       cursor: pointer; margin-left: 10px;">×</button>
+                    </div>
+                    """, height=30)
                 
                 # Insulin statistics
                 col1, col2, col3, col4 = st.columns(4)
