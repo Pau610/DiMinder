@@ -2,7 +2,6 @@
   "name": "我的日記 - 糖尿病管理应用",
   "short_name": "我的日記",
   "description": "专业的糖尿病健康数据管理和预测应用",
-  "id": "diabetes-diary-app",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
@@ -10,62 +9,7 @@
   "orientation": "portrait-primary",
   "scope": "/",
   "lang": "zh-CN",
-  "dir": "ltr",
   "icons": [
-    {
-      "src": "/generated-icon.png",
-      "sizes": "57x57",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/generated-icon.png",
-      "sizes": "60x60",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/generated-icon.png",
-      "sizes": "72x72",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/generated-icon.png",
-      "sizes": "76x76",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/generated-icon.png",
-      "sizes": "114x114",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/generated-icon.png",
-      "sizes": "120x120",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/generated-icon.png",
-      "sizes": "144x144",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/generated-icon.png",
-      "sizes": "152x152",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/generated-icon.png",
-      "sizes": "180x180",
-      "type": "image/png",
-      "purpose": "any"
-    },
     {
       "src": "/generated-icon.png",
       "sizes": "192x192",
@@ -83,24 +27,9 @@
   "screenshots": [
     {
       "src": "/generated-icon.png",
-      "sizes": "1284x2778",
+      "sizes": "1280x720",
       "type": "image/png",
-      "form_factor": "narrow",
-      "label": "iPhone 14 Pro Max"
-    },
-    {
-      "src": "/generated-icon.png",
-      "sizes": "1170x2532",
-      "type": "image/png", 
-      "form_factor": "narrow",
-      "label": "iPhone 14 Pro"
-    },
-    {
-      "src": "/generated-icon.png",
-      "sizes": "2048x2732",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "iPad Pro 12.9"
+      "form_factor": "wide"
     }
   ],
   "shortcuts": [
@@ -112,30 +41,12 @@
       "icons": [{ "src": "/generated-icon.png", "sizes": "96x96" }]
     },
     {
-      "name": "记录胰岛素",
-      "short_name": "胰岛素",
-      "description": "快速记录胰岛素注射",
-      "url": "/?action=insulin",
-      "icons": [{ "src": "/generated-icon.png", "sizes": "96x96" }]
-    },
-    {
       "name": "记录饮食",
       "short_name": "饮食",
       "description": "快速记录饮食数据",
       "url": "/?action=meal",
       "icons": [{ "src": "/generated-icon.png", "sizes": "96x96" }]
-    },
-    {
-      "name": "查看摘要",
-      "short_name": "摘要",
-      "description": "查看每日健康摘要",
-      "url": "/?action=summary",
-      "icons": [{ "src": "/generated-icon.png", "sizes": "96x96" }]
     }
   ],
-  "prefer_related_applications": false,
-  "related_applications": [],
-  "edge_side_panel": {
-    "preferred_width": 480
-  }
+  "prefer_related_applications": false
 }
