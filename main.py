@@ -1070,108 +1070,24 @@ if st.session_state.input_type == 'glucose':
             hk_now = datetime.now(HK_TZ)
             st.session_state.glucose_time_state = hk_now.strftime("%H:%M")
         
-        # Custom time input with clear button
-        components.html(f"""
-        <div style="margin-bottom: 10px;">
-            <label style="font-size: 14px; font-weight: 600; margin-bottom: 4px; display: block;">记录时间 (GMT+8)</label>
-            <div style="position: relative; display: flex; align-items: center;">
-                <input 
-                    type="text" 
-                    id="glucose_time_input_custom" 
-                    value="{st.session_state.glucose_time_state}"
-                    placeholder="例如: 1430 或 14:30"
-                    style="
-                        width: 100%; 
-                        padding: 8px 35px 8px 12px; 
-                        border: 1px solid #d1d5db; 
-                        border-radius: 6px; 
-                        font-size: 14px;
-                        background-color: white;
-                    "
-                    oninput="updateGlucoseTime(this.value)"
-                    onblur="handleGlucoseTimeBlur()"
-                />
-                <button 
-                    onclick="clearGlucoseTime()" 
-                    style="
-                        position: absolute; 
-                        right: 8px; 
-                        background: none; 
-                        border: none; 
-                        color: #6b7280; 
-                        cursor: pointer; 
-                        font-size: 16px;
-                        padding: 4px;
-                        border-radius: 3px;
-                    "
-                    onmouseover="this.style.backgroundColor='#f3f4f6'"
-                    onmouseout="this.style.backgroundColor='transparent'"
-                    title="清除时间"
-                >×</button>
-            </div>
-            <small style="color: #6b7280; font-size: 12px;">支持格式: 1430, 14:30, 930, 9:30</small>
-        </div>
-        <script>
-            function updateGlucoseTime(value) {{
-                // Store the raw input value
-                window.glucoseTimeRawInput = value;
-            }}
-            
-            function handleGlucoseTimeBlur() {{
-                let value = document.getElementById('glucose_time_input_custom').value;
-                if (value && (value.length === 3 || value.length === 4)) {{
-                    let formatted = formatTimeInput(value);
-                    if (formatted !== value && formatted.includes(':')) {{
-                        document.getElementById('glucose_time_input_custom').value = formatted;
-                        window.glucoseTimeRawInput = formatted;
-                    }}
-                }}
-            }}
-            
-            function formatTimeInput(input) {{
-                // Remove any non-digit characters except colon
-                let cleaned = input.replace(/[^0-9:]/g, '');
-                
-                // Handle 4-digit format (2350 -> 23:50)
-                if (cleaned.length === 4 && !cleaned.includes(':')) {{
-                    let hours = parseInt(cleaned.substring(0, 2));
-                    let minutes = parseInt(cleaned.substring(2));
-                    // Validate hours (00-23) and minutes (00-59)
-                    if (hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59) {{
-                        return cleaned.substring(0, 2) + ':' + cleaned.substring(2);
-                    }}
-                }}
-                
-                // Handle 3-digit format (930 -> 09:30)
-                if (cleaned.length === 3 && !cleaned.includes(':')) {{
-                    let hour = parseInt(cleaned.substring(0, 1));
-                    let minutes = parseInt(cleaned.substring(1));
-                    // Validate hour (0-9) and minutes (00-59)
-                    if (hour >= 0 && hour <= 9 && minutes >= 0 && minutes <= 59) {{
-                        return '0' + cleaned.substring(0, 1) + ':' + cleaned.substring(1);
-                    }}
-                }}
-                
-                return cleaned;
-            }}
-            
-            function clearGlucoseTime() {{
-                document.getElementById('glucose_time_input_custom').value = '';
-                window.glucoseTimeRawInput = '';
-            }}
-            
-            // Initialize the stored value
-            window.glucoseTimeRawInput = '{st.session_state.glucose_time_state}';
-        </script>
-        """, height=80)
+        # Time input field
+        glucose_time_input = st.text_input(
+            "记录时间 (GMT+8)",
+            value=st.session_state.glucose_time_state,
+            placeholder="例如: 1430, 14:30, 930, 9:30",
+            help="支持格式: 1430, 14:30, 930, 9:30",
+            key="glucose_time_input"
+        )
         
-        # Parse the time input and update state
-        record_time = parse_time_input(st.session_state.glucose_time_state)
-        st.session_state.glucose_time_state = record_time.strftime("%H:%M")
+        # Parse the actual time input from user
+        if glucose_time_input:
+            record_time = parse_time_input(glucose_time_input)
+            st.session_state.glucose_time_state = glucose_time_input  # Store the raw input
+        else:
+            record_time = parse_time_input(st.session_state.glucose_time_state)
         
         # Display parsed time for confirmation
-        if st.session_state.glucose_time_state:
-            st.caption(f"解析时间: {record_time.strftime('%H:%M')}")
+        st.caption(f"解析时间: {record_time.strftime('%H:%M')}")
 
     glucose_mmol = st.number_input("血糖水平 (mmol/L)", min_value=2.0, max_value=22.0, value=None, step=0.1, key="glucose_level", placeholder="请输入血糖值")
 
@@ -1222,108 +1138,24 @@ elif st.session_state.input_type == 'meal':
             hk_now = datetime.now(HK_TZ)
             st.session_state.meal_time_state = hk_now.strftime("%H:%M")
         
-        # Custom meal time input with clear button
-        components.html(f"""
-        <div style="margin-bottom: 10px;">
-            <label style="font-size: 14px; font-weight: 600; margin-bottom: 4px; display: block;">用餐时间 (GMT+8)</label>
-            <div style="position: relative; display: flex; align-items: center;">
-                <input 
-                    type="text" 
-                    id="meal_time_input_custom" 
-                    value="{st.session_state.meal_time_state}"
-                    placeholder="例如: 1230 或 12:30"
-                    style="
-                        width: 100%; 
-                        padding: 8px 35px 8px 12px; 
-                        border: 1px solid #d1d5db; 
-                        border-radius: 6px; 
-                        font-size: 14px;
-                        background-color: white;
-                    "
-                    oninput="updateMealTime(this.value)"
-                    onblur="handleMealTimeBlur()"
-                />
-                <button 
-                    onclick="clearMealTime()" 
-                    style="
-                        position: absolute; 
-                        right: 8px; 
-                        background: none; 
-                        border: none; 
-                        color: #6b7280; 
-                        cursor: pointer; 
-                        font-size: 16px;
-                        padding: 4px;
-                        border-radius: 3px;
-                    "
-                    onmouseover="this.style.backgroundColor='#f3f4f6'"
-                    onmouseout="this.style.backgroundColor='transparent'"
-                    title="清除时间"
-                >×</button>
-            </div>
-            <small style="color: #6b7280; font-size: 12px;">支持格式: 1230, 12:30, 730, 7:30</small>
-        </div>
-        <script>
-            function updateMealTime(value) {{
-                // Store the raw input value
-                window.mealTimeRawInput = value;
-            }}
-            
-            function handleMealTimeBlur() {{
-                let value = document.getElementById('meal_time_input_custom').value;
-                if (value && (value.length === 3 || value.length === 4)) {{
-                    let formatted = formatTimeInput(value);
-                    if (formatted !== value && formatted.includes(':')) {{
-                        document.getElementById('meal_time_input_custom').value = formatted;
-                        window.mealTimeRawInput = formatted;
-                    }}
-                }}
-            }}
-            
-            function formatTimeInput(input) {{
-                // Remove any non-digit characters except colon
-                let cleaned = input.replace(/[^0-9:]/g, '');
-                
-                // Handle 4-digit format (2350 -> 23:50)
-                if (cleaned.length === 4 && !cleaned.includes(':')) {{
-                    let hours = parseInt(cleaned.substring(0, 2));
-                    let minutes = parseInt(cleaned.substring(2));
-                    // Validate hours (00-23) and minutes (00-59)
-                    if (hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59) {{
-                        return cleaned.substring(0, 2) + ':' + cleaned.substring(2);
-                    }}
-                }}
-                
-                // Handle 3-digit format (930 -> 09:30)
-                if (cleaned.length === 3 && !cleaned.includes(':')) {{
-                    let hour = parseInt(cleaned.substring(0, 1));
-                    let minutes = parseInt(cleaned.substring(1));
-                    // Validate hour (0-9) and minutes (00-59)
-                    if (hour >= 0 && hour <= 9 && minutes >= 0 && minutes <= 59) {{
-                        return '0' + cleaned.substring(0, 1) + ':' + cleaned.substring(1);
-                    }}
-                }}
-                
-                return cleaned;
-            }}
-            
-            function clearMealTime() {{
-                document.getElementById('meal_time_input_custom').value = '';
-                window.mealTimeRawInput = '';
-            }}
-            
-            // Initialize the stored value
-            window.mealTimeRawInput = '{st.session_state.meal_time_state}';
-        </script>
-        """, height=80)
+        # Time input field
+        meal_time_input = st.text_input(
+            "用餐时间 (GMT+8)",
+            value=st.session_state.meal_time_state,
+            placeholder="例如: 1230, 12:30, 730, 7:30",
+            help="支持格式: 1230, 12:30, 730, 7:30",
+            key="meal_time_input"
+        )
         
-        # Parse the time input and update state
-        meal_time = parse_time_input(st.session_state.meal_time_state)
-        st.session_state.meal_time_state = meal_time.strftime("%H:%M")
+        # Parse the actual time input from user
+        if meal_time_input:
+            meal_time = parse_time_input(meal_time_input)
+            st.session_state.meal_time_state = meal_time_input  # Store the raw input
+        else:
+            meal_time = parse_time_input(st.session_state.meal_time_state)
         
         # Display parsed time for confirmation
-        if st.session_state.meal_time_state:
-            st.caption(f"解析时间: {meal_time.strftime('%H:%M')}")
+        st.caption(f"解析时间: {meal_time.strftime('%H:%M')}")
 
     # 初始化食物列表
     if 'meal_foods' not in st.session_state:
@@ -1416,108 +1248,24 @@ elif st.session_state.input_type == 'insulin':
             hk_now = datetime.now(HK_TZ)
             st.session_state.injection_time_state = hk_now.strftime("%H:%M")
         
-        # Custom injection time input with clear button
-        components.html(f"""
-        <div style="margin-bottom: 10px;">
-            <label style="font-size: 14px; font-weight: 600; margin-bottom: 4px; display: block;">注射时间 (GMT+8)</label>
-            <div style="position: relative; display: flex; align-items: center;">
-                <input 
-                    type="text" 
-                    id="injection_time_input_custom" 
-                    value="{st.session_state.injection_time_state}"
-                    placeholder="例如: 0800 或 08:00"
-                    style="
-                        width: 100%; 
-                        padding: 8px 35px 8px 12px; 
-                        border: 1px solid #d1d5db; 
-                        border-radius: 6px; 
-                        font-size: 14px;
-                        background-color: white;
-                    "
-                    oninput="updateInjectionTime(this.value)"
-                    onblur="handleInjectionTimeBlur()"
-                />
-                <button 
-                    onclick="clearInjectionTime()" 
-                    style="
-                        position: absolute; 
-                        right: 8px; 
-                        background: none; 
-                        border: none; 
-                        color: #6b7280; 
-                        cursor: pointer; 
-                        font-size: 16px;
-                        padding: 4px;
-                        border-radius: 3px;
-                    "
-                    onmouseover="this.style.backgroundColor='#f3f4f6'"
-                    onmouseout="this.style.backgroundColor='transparent'"
-                    title="清除时间"
-                >×</button>
-            </div>
-            <small style="color: #6b7280; font-size: 12px;">支持格式: 0800, 08:00, 800, 8:00</small>
-        </div>
-        <script>
-            function updateInjectionTime(value) {{
-                // Store the raw input value
-                window.injectionTimeRawInput = value;
-            }}
-            
-            function handleInjectionTimeBlur() {{
-                let value = document.getElementById('injection_time_input_custom').value;
-                if (value && (value.length === 3 || value.length === 4)) {{
-                    let formatted = formatTimeInput(value);
-                    if (formatted !== value && formatted.includes(':')) {{
-                        document.getElementById('injection_time_input_custom').value = formatted;
-                        window.injectionTimeRawInput = formatted;
-                    }}
-                }}
-            }}
-            
-            function formatTimeInput(input) {{
-                // Remove any non-digit characters except colon
-                let cleaned = input.replace(/[^0-9:]/g, '');
-                
-                // Handle 4-digit format (2350 -> 23:50)
-                if (cleaned.length === 4 && !cleaned.includes(':')) {{
-                    let hours = parseInt(cleaned.substring(0, 2));
-                    let minutes = parseInt(cleaned.substring(2));
-                    // Validate hours (00-23) and minutes (00-59)
-                    if (hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59) {{
-                        return cleaned.substring(0, 2) + ':' + cleaned.substring(2);
-                    }}
-                }}
-                
-                // Handle 3-digit format (930 -> 09:30)
-                if (cleaned.length === 3 && !cleaned.includes(':')) {{
-                    let hour = parseInt(cleaned.substring(0, 1));
-                    let minutes = parseInt(cleaned.substring(1));
-                    // Validate hour (0-9) and minutes (00-59)
-                    if (hour >= 0 && hour <= 9 && minutes >= 0 && minutes <= 59) {{
-                        return '0' + cleaned.substring(0, 1) + ':' + cleaned.substring(1);
-                    }}
-                }}
-                
-                return cleaned;
-            }}
-            
-            function clearInjectionTime() {{
-                document.getElementById('injection_time_input_custom').value = '';
-                window.injectionTimeRawInput = '';
-            }}
-            
-            // Initialize the stored value
-            window.injectionTimeRawInput = '{st.session_state.injection_time_state}';
-        </script>
-        """, height=80)
+        # Time input field
+        injection_time_input = st.text_input(
+            "注射时间 (GMT+8)",
+            value=st.session_state.injection_time_state,
+            placeholder="例如: 0800, 08:00, 800, 8:00",
+            help="支持格式: 0800, 08:00, 800, 8:00",
+            key="injection_time_input"
+        )
         
-        # Parse the time input and update state
-        injection_time = parse_time_input(st.session_state.injection_time_state)
-        st.session_state.injection_time_state = injection_time.strftime("%H:%M")
+        # Parse the actual time input from user
+        if injection_time_input:
+            injection_time = parse_time_input(injection_time_input)
+            st.session_state.injection_time_state = injection_time_input  # Store the raw input
+        else:
+            injection_time = parse_time_input(st.session_state.injection_time_state)
         
         # Display parsed time for confirmation
-        if st.session_state.injection_time_state:
-            st.caption(f"解析时间: {injection_time.strftime('%H:%M')}")
+        st.caption(f"解析时间: {injection_time.strftime('%H:%M')}")
 
     # 注射部位选择
     injection_site = st.selectbox(
