@@ -1177,27 +1177,27 @@ if st.session_state.input_type == 'glucose':
         </script>
         """, height=80)
         
-        # Convert numeric input to HH:MM format automatically
-        if st.session_state.glucose_time_state and not ":" in st.session_state.glucose_time_state and st.session_state.glucose_time_state.isdigit():
-            raw_input = st.session_state.glucose_time_state
-            if len(raw_input) == 4:
-                hours = int(raw_input[:2])
-                minutes = int(raw_input[2:])
-                if 0 <= hours <= 23 and 0 <= minutes <= 59:
-                    st.session_state.glucose_time_state = f"{hours:02d}:{minutes:02d}"
-            elif len(raw_input) == 3:
-                hours = int(raw_input[0])
-                minutes = int(raw_input[1:])
-                if 0 <= hours <= 9 and 0 <= minutes <= 59:
-                    st.session_state.glucose_time_state = f"{hours:02d}:{minutes:02d}"
-
     glucose_mmol = st.number_input("血糖水平 (mmol/L)", min_value=2.0, max_value=22.0, value=None, step=0.1, key="glucose_level", placeholder="请输入血糖值")
 
     if st.button("添加血糖记录", use_container_width=True):
         if glucose_mmol is not None:
-            # Use the time value directly from session state (already converted)
+            # Convert numeric input to HH:MM format before saving
             time_value = st.session_state.glucose_time_state
-            st.write(f"Debug: Session state time = '{time_value}'")
+            st.write(f"Debug: Original input = '{time_value}'")
+            
+            if time_value and not ":" in time_value and time_value.isdigit():
+                if len(time_value) == 4:
+                    hours = int(time_value[:2])
+                    minutes = int(time_value[2:])
+                    if 0 <= hours <= 23 and 0 <= minutes <= 59:
+                        time_value = f"{hours:02d}:{minutes:02d}"
+                        st.write(f"Debug: Converted 4-digit time to = '{time_value}'")
+                elif len(time_value) == 3:
+                    hours = int(time_value[0])
+                    minutes = int(time_value[1:])
+                    if 0 <= hours <= 9 and 0 <= minutes <= 59:
+                        time_value = f"{hours:02d}:{minutes:02d}"
+                        st.write(f"Debug: Converted 3-digit time to = '{time_value}'")
             
             if time_value and ":" in time_value:
                 try:
@@ -1208,7 +1208,7 @@ if st.session_state.input_type == 'glucose':
                     st.write(f"Debug: Parse failed, using current time = {final_time}")
             else:
                 final_time = datetime.now().time()
-                st.write(f"Debug: No colon found, using current time = {final_time}")
+                st.write(f"Debug: No valid time format, using current time = {final_time}")
             
             record_datetime = datetime.combine(record_date, final_time)
             st.write(f"Debug: Final datetime = {record_datetime}")
