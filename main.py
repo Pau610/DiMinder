@@ -1196,11 +1196,22 @@ if st.session_state.input_type == 'glucose':
     if st.button("添加血糖记录", use_container_width=True):
         if glucose_mmol is not None:
             # Use the time value directly from session state (already converted)
-            if st.session_state.glucose_time_state and ":" in st.session_state.glucose_time_state:
-                final_time = datetime.strptime(st.session_state.glucose_time_state, "%H:%M").time()
+            time_value = st.session_state.glucose_time_state
+            st.write(f"Debug: Session state time = '{time_value}'")
+            
+            if time_value and ":" in time_value:
+                try:
+                    final_time = datetime.strptime(time_value, "%H:%M").time()
+                    st.write(f"Debug: Parsed time = {final_time}")
+                except:
+                    final_time = datetime.now().time()
+                    st.write(f"Debug: Parse failed, using current time = {final_time}")
             else:
                 final_time = datetime.now().time()
+                st.write(f"Debug: No colon found, using current time = {final_time}")
+            
             record_datetime = datetime.combine(record_date, final_time)
+            st.write(f"Debug: Final datetime = {record_datetime}")
             # Convert mmol/L to mg/dL for internal storage
             glucose_level_mgdl = glucose_mmol * 18.0182
             new_data = {
