@@ -1179,25 +1179,47 @@ if st.session_state.input_type == 'glucose':
         
         # Check if user input needs conversion and update session state
         raw_input = st.session_state.glucose_time_state
+        converted_time = raw_input
+        
         if raw_input and not ":" in raw_input and raw_input.isdigit():
             # Convert numeric input to HH:MM format
             if len(raw_input) == 4:
                 hours = int(raw_input[:2])
                 minutes = int(raw_input[2:])
                 if 0 <= hours <= 23 and 0 <= minutes <= 59:
-                    st.session_state.glucose_time_state = f"{hours:02d}:{minutes:02d}"
+                    converted_time = f"{hours:02d}:{minutes:02d}"
+                    st.session_state.glucose_time_state = converted_time
             elif len(raw_input) == 3:
                 hours = int(raw_input[0])
                 minutes = int(raw_input[1:])
                 if 0 <= hours <= 9 and 0 <= minutes <= 59:
-                    st.session_state.glucose_time_state = f"{hours:02d}:{minutes:02d}"
-        
-        # Parse the time input for validation
-        record_time = parse_time_input(st.session_state.glucose_time_state)
+                    converted_time = f"{hours:02d}:{minutes:02d}"
+                    st.session_state.glucose_time_state = converted_time
         
         # Display current time for confirmation
         if st.session_state.glucose_time_state:
             st.caption(f"解析时间: {st.session_state.glucose_time_state}")
+            if raw_input != converted_time:
+                st.caption(f"原始输入: {raw_input} → 转换为: {converted_time}")
+        
+        # Add conversion button for manual trigger
+        if raw_input and not ":" in raw_input and raw_input.isdigit():
+            if st.button("🔄 转换时间格式", key="convert_glucose_time", help="点击转换数字时间格式"):
+                if len(raw_input) == 4:
+                    hours = int(raw_input[:2])
+                    minutes = int(raw_input[2:])
+                    if 0 <= hours <= 23 and 0 <= minutes <= 59:
+                        st.session_state.glucose_time_state = f"{hours:02d}:{minutes:02d}"
+                        st.rerun()
+                elif len(raw_input) == 3:
+                    hours = int(raw_input[0])
+                    minutes = int(raw_input[1:])
+                    if 0 <= hours <= 9 and 0 <= minutes <= 59:
+                        st.session_state.glucose_time_state = f"{hours:02d}:{minutes:02d}"
+                        st.rerun()
+        
+        # Parse the time input for validation
+        record_time = parse_time_input(st.session_state.glucose_time_state)
 
     glucose_mmol = st.number_input("血糖水平 (mmol/L)", min_value=2.0, max_value=22.0, value=None, step=0.1, key="glucose_level", placeholder="请输入血糖值")
 
@@ -1347,25 +1369,47 @@ elif st.session_state.input_type == 'meal':
         
         # Check if user input needs conversion and update session state
         raw_input = st.session_state.meal_time_state
+        converted_time = raw_input
+        
         if raw_input and not ":" in raw_input and raw_input.isdigit():
             # Convert numeric input to HH:MM format
             if len(raw_input) == 4:
                 hours = int(raw_input[:2])
                 minutes = int(raw_input[2:])
                 if 0 <= hours <= 23 and 0 <= minutes <= 59:
-                    st.session_state.meal_time_state = f"{hours:02d}:{minutes:02d}"
+                    converted_time = f"{hours:02d}:{minutes:02d}"
+                    st.session_state.meal_time_state = converted_time
             elif len(raw_input) == 3:
                 hours = int(raw_input[0])
                 minutes = int(raw_input[1:])
                 if 0 <= hours <= 9 and 0 <= minutes <= 59:
-                    st.session_state.meal_time_state = f"{hours:02d}:{minutes:02d}"
-        
-        # Parse the time input for validation
-        meal_time = parse_time_input(st.session_state.meal_time_state)
+                    converted_time = f"{hours:02d}:{minutes:02d}"
+                    st.session_state.meal_time_state = converted_time
         
         # Display current time for confirmation
         if st.session_state.meal_time_state:
             st.caption(f"解析时间: {st.session_state.meal_time_state}")
+            if raw_input != converted_time:
+                st.caption(f"原始输入: {raw_input} → 转换为: {converted_time}")
+        
+        # Add conversion button for manual trigger
+        if raw_input and not ":" in raw_input and raw_input.isdigit():
+            if st.button("🔄 转换时间格式", key="convert_meal_time", help="点击转换数字时间格式"):
+                if len(raw_input) == 4:
+                    hours = int(raw_input[:2])
+                    minutes = int(raw_input[2:])
+                    if 0 <= hours <= 23 and 0 <= minutes <= 59:
+                        st.session_state.meal_time_state = f"{hours:02d}:{minutes:02d}"
+                        st.rerun()
+                elif len(raw_input) == 3:
+                    hours = int(raw_input[0])
+                    minutes = int(raw_input[1:])
+                    if 0 <= hours <= 9 and 0 <= minutes <= 59:
+                        st.session_state.meal_time_state = f"{hours:02d}:{minutes:02d}"
+                        st.rerun()
+        
+        # Parse the time input for validation
+        meal_time = parse_time_input(st.session_state.meal_time_state)
 
     # 初始化食物列表
     if 'meal_foods' not in st.session_state:
@@ -1557,25 +1601,47 @@ elif st.session_state.input_type == 'insulin':
         
         # Check if user input needs conversion and update session state
         raw_input = st.session_state.injection_time_state
+        converted_time = raw_input
+        
         if raw_input and not ":" in raw_input and raw_input.isdigit():
             # Convert numeric input to HH:MM format
             if len(raw_input) == 4:
                 hours = int(raw_input[:2])
                 minutes = int(raw_input[2:])
                 if 0 <= hours <= 23 and 0 <= minutes <= 59:
-                    st.session_state.injection_time_state = f"{hours:02d}:{minutes:02d}"
+                    converted_time = f"{hours:02d}:{minutes:02d}"
+                    st.session_state.injection_time_state = converted_time
             elif len(raw_input) == 3:
                 hours = int(raw_input[0])
                 minutes = int(raw_input[1:])
                 if 0 <= hours <= 9 and 0 <= minutes <= 59:
-                    st.session_state.injection_time_state = f"{hours:02d}:{minutes:02d}"
-        
-        # Parse the time input for validation
-        injection_time = parse_time_input(st.session_state.injection_time_state)
+                    converted_time = f"{hours:02d}:{minutes:02d}"
+                    st.session_state.injection_time_state = converted_time
         
         # Display current time for confirmation
         if st.session_state.injection_time_state:
             st.caption(f"解析时间: {st.session_state.injection_time_state}")
+            if raw_input != converted_time:
+                st.caption(f"原始输入: {raw_input} → 转换为: {converted_time}")
+        
+        # Add conversion button for manual trigger
+        if raw_input and not ":" in raw_input and raw_input.isdigit():
+            if st.button("🔄 转换时间格式", key="convert_injection_time", help="点击转换数字时间格式"):
+                if len(raw_input) == 4:
+                    hours = int(raw_input[:2])
+                    minutes = int(raw_input[2:])
+                    if 0 <= hours <= 23 and 0 <= minutes <= 59:
+                        st.session_state.injection_time_state = f"{hours:02d}:{minutes:02d}"
+                        st.rerun()
+                elif len(raw_input) == 3:
+                    hours = int(raw_input[0])
+                    minutes = int(raw_input[1:])
+                    if 0 <= hours <= 9 and 0 <= minutes <= 59:
+                        st.session_state.injection_time_state = f"{hours:02d}:{minutes:02d}"
+                        st.rerun()
+        
+        # Parse the time input for validation
+        injection_time = parse_time_input(st.session_state.injection_time_state)
 
     # 注射部位选择
     injection_site = st.selectbox(
