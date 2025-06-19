@@ -1124,8 +1124,20 @@ if st.session_state.input_type == 'glucose':
                     if (formatted !== value && formatted.includes(':')) {{
                         document.getElementById('glucose_time_input_custom').value = formatted;
                         window.glucoseTimeRawInput = formatted;
+                        // Force page refresh to sync with Streamlit
+                        setTimeout(() => {{
+                            window.parent.postMessage({{
+                                type: 'streamlit:timeUpdate',
+                                data: {{
+                                    timeType: 'glucose',
+                                    newTime: formatted
+                                }}
+                            }}, '*');
+                        }}, 100);
                     }}
                 }}
+                // Always update the stored value
+                window.glucoseTimeRawInput = value;
             }}
             
             function formatTimeInput(input) {{
@@ -1165,13 +1177,27 @@ if st.session_state.input_type == 'glucose':
         </script>
         """, height=80)
         
-        # Parse the time input and update state
-        record_time = parse_time_input(st.session_state.glucose_time_state)
-        st.session_state.glucose_time_state = record_time.strftime("%H:%M")
+        # Check if user input needs conversion and update session state
+        raw_input = st.session_state.glucose_time_state
+        if raw_input and not ":" in raw_input and raw_input.isdigit():
+            # Convert numeric input to HH:MM format
+            if len(raw_input) == 4:
+                hours = int(raw_input[:2])
+                minutes = int(raw_input[2:])
+                if 0 <= hours <= 23 and 0 <= minutes <= 59:
+                    st.session_state.glucose_time_state = f"{hours:02d}:{minutes:02d}"
+            elif len(raw_input) == 3:
+                hours = int(raw_input[0])
+                minutes = int(raw_input[1:])
+                if 0 <= hours <= 9 and 0 <= minutes <= 59:
+                    st.session_state.glucose_time_state = f"{hours:02d}:{minutes:02d}"
         
-        # Display parsed time for confirmation
+        # Parse the time input for validation
+        record_time = parse_time_input(st.session_state.glucose_time_state)
+        
+        # Display current time for confirmation
         if st.session_state.glucose_time_state:
-            st.caption(f"解析时间: {record_time.strftime('%H:%M')}")
+            st.caption(f"解析时间: {st.session_state.glucose_time_state}")
 
     glucose_mmol = st.number_input("血糖水平 (mmol/L)", min_value=2.0, max_value=22.0, value=None, step=0.1, key="glucose_level", placeholder="请输入血糖值")
 
@@ -1319,13 +1345,27 @@ elif st.session_state.input_type == 'meal':
         </script>
         """, height=80)
         
-        # Parse the time input and update state
-        meal_time = parse_time_input(st.session_state.meal_time_state)
-        st.session_state.meal_time_state = meal_time.strftime("%H:%M")
+        # Check if user input needs conversion and update session state
+        raw_input = st.session_state.meal_time_state
+        if raw_input and not ":" in raw_input and raw_input.isdigit():
+            # Convert numeric input to HH:MM format
+            if len(raw_input) == 4:
+                hours = int(raw_input[:2])
+                minutes = int(raw_input[2:])
+                if 0 <= hours <= 23 and 0 <= minutes <= 59:
+                    st.session_state.meal_time_state = f"{hours:02d}:{minutes:02d}"
+            elif len(raw_input) == 3:
+                hours = int(raw_input[0])
+                minutes = int(raw_input[1:])
+                if 0 <= hours <= 9 and 0 <= minutes <= 59:
+                    st.session_state.meal_time_state = f"{hours:02d}:{minutes:02d}"
         
-        # Display parsed time for confirmation
+        # Parse the time input for validation
+        meal_time = parse_time_input(st.session_state.meal_time_state)
+        
+        # Display current time for confirmation
         if st.session_state.meal_time_state:
-            st.caption(f"解析时间: {meal_time.strftime('%H:%M')}")
+            st.caption(f"解析时间: {st.session_state.meal_time_state}")
 
     # 初始化食物列表
     if 'meal_foods' not in st.session_state:
@@ -1515,13 +1555,27 @@ elif st.session_state.input_type == 'insulin':
         </script>
         """, height=80)
         
-        # Parse the time input and update state
-        injection_time = parse_time_input(st.session_state.injection_time_state)
-        st.session_state.injection_time_state = injection_time.strftime("%H:%M")
+        # Check if user input needs conversion and update session state
+        raw_input = st.session_state.injection_time_state
+        if raw_input and not ":" in raw_input and raw_input.isdigit():
+            # Convert numeric input to HH:MM format
+            if len(raw_input) == 4:
+                hours = int(raw_input[:2])
+                minutes = int(raw_input[2:])
+                if 0 <= hours <= 23 and 0 <= minutes <= 59:
+                    st.session_state.injection_time_state = f"{hours:02d}:{minutes:02d}"
+            elif len(raw_input) == 3:
+                hours = int(raw_input[0])
+                minutes = int(raw_input[1:])
+                if 0 <= hours <= 9 and 0 <= minutes <= 59:
+                    st.session_state.injection_time_state = f"{hours:02d}:{minutes:02d}"
         
-        # Display parsed time for confirmation
+        # Parse the time input for validation
+        injection_time = parse_time_input(st.session_state.injection_time_state)
+        
+        # Display current time for confirmation
         if st.session_state.injection_time_state:
-            st.caption(f"解析时间: {injection_time.strftime('%H:%M')}")
+            st.caption(f"解析时间: {st.session_state.injection_time_state}")
 
     # 注射部位选择
     injection_site = st.selectbox(
