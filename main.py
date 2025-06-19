@@ -1177,7 +1177,9 @@ if st.session_state.input_type == 'glucose':
 
     if st.button("添加血糖记录", use_container_width=True):
         if glucose_mmol is not None:
-            record_datetime = datetime.combine(record_date, record_time)
+            # Use the converted time from input field instead of parsed time
+            final_time = datetime.strptime(st.session_state.glucose_time_state, "%H:%M").time()
+            record_datetime = datetime.combine(record_date, final_time)
             # Convert mmol/L to mg/dL for internal storage
             glucose_level_mgdl = glucose_mmol * 18.0182
             new_data = {
@@ -1366,7 +1368,9 @@ elif st.session_state.input_type == 'meal':
         st.write(f"**总碳水化合物: {total_carbs:.1f}g**")
 
         if st.button("添加饮食记录", use_container_width=True):
-            meal_datetime = datetime.combine(meal_date, meal_time)
+            # Use the converted time from input field instead of parsed time
+            final_meal_time = datetime.strptime(st.session_state.meal_time_state, "%H:%M").time()
+            meal_datetime = datetime.combine(meal_date, final_meal_time)
             # Create detailed food description
             food_list = [f"{item['food']} ({item['carbs']}g碳水)" for item in st.session_state.meal_foods]
             food_details = "; ".join(food_list)
@@ -1544,7 +1548,9 @@ elif st.session_state.input_type == 'insulin':
 
     if st.button("添加注射记录", use_container_width=True):
                 if insulin_dose is not None and insulin_dose > 0:
-                    injection_datetime = datetime.combine(injection_date, injection_time)
+                    # Use the converted time from input field instead of parsed time
+                    final_injection_time = datetime.strptime(st.session_state.injection_time_state, "%H:%M").time()
+                    injection_datetime = datetime.combine(injection_date, final_injection_time)
                     new_injection = {
                         'timestamp': injection_datetime,
                         'glucose_level': 0,
