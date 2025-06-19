@@ -1070,14 +1070,21 @@ if st.session_state.input_type == 'glucose':
             hk_now = datetime.now(HK_TZ)
             st.session_state.glucose_time_state = hk_now.strftime("%H:%M")
         
-        # Time input field
-        glucose_time_input = st.text_input(
-            "记录时间 (GMT+8)",
-            value=st.session_state.glucose_time_state,
-            placeholder="例如: 1430, 14:30, 930, 9:30",
-            help="支持格式: 1430, 14:30, 930, 9:30",
-            key="glucose_time_input"
-        )
+        # Time input field with clear button
+        col_time, col_clear = st.columns([4, 1])
+        with col_time:
+            glucose_time_input = st.text_input(
+                "记录时间 (GMT+8)",
+                value=st.session_state.glucose_time_state,
+                placeholder="例如: 1430, 14:30, 930, 9:30",
+                help="支持格式: 1430, 14:30, 930, 9:30",
+                key="glucose_time_input"
+            )
+        with col_clear:
+            st.write("")  # Add spacing to align with input
+            if st.button("清除", key="clear_glucose_time", help="清除时间"):
+                st.session_state.glucose_time_state = ""
+                st.rerun()
         
         # Parse the actual time input from user
         if glucose_time_input:
@@ -1138,14 +1145,21 @@ elif st.session_state.input_type == 'meal':
             hk_now = datetime.now(HK_TZ)
             st.session_state.meal_time_state = hk_now.strftime("%H:%M")
         
-        # Time input field
-        meal_time_input = st.text_input(
-            "用餐时间 (GMT+8)",
-            value=st.session_state.meal_time_state,
-            placeholder="例如: 1230, 12:30, 730, 7:30",
-            help="支持格式: 1230, 12:30, 730, 7:30",
-            key="meal_time_input"
-        )
+        # Time input field with clear button
+        col_time, col_clear = st.columns([4, 1])
+        with col_time:
+            meal_time_input = st.text_input(
+                "用餐时间 (GMT+8)",
+                value=st.session_state.meal_time_state,
+                placeholder="例如: 1230, 12:30, 730, 7:30",
+                help="支持格式: 1230, 12:30, 730, 7:30",
+                key="meal_time_input"
+            )
+        with col_clear:
+            st.write("")  # Add spacing to align with input
+            if st.button("清除", key="clear_meal_time", help="清除时间"):
+                st.session_state.meal_time_state = ""
+                st.rerun()
         
         # Parse the actual time input from user
         if meal_time_input:
@@ -1248,14 +1262,21 @@ elif st.session_state.input_type == 'insulin':
             hk_now = datetime.now(HK_TZ)
             st.session_state.injection_time_state = hk_now.strftime("%H:%M")
         
-        # Time input field
-        injection_time_input = st.text_input(
-            "注射时间 (GMT+8)",
-            value=st.session_state.injection_time_state,
-            placeholder="例如: 0800, 08:00, 800, 8:00",
-            help="支持格式: 0800, 08:00, 800, 8:00",
-            key="injection_time_input"
-        )
+        # Time input field with clear button
+        col_time, col_clear = st.columns([4, 1])
+        with col_time:
+            injection_time_input = st.text_input(
+                "注射时间 (GMT+8)",
+                value=st.session_state.injection_time_state,
+                placeholder="例如: 0800, 08:00, 800, 8:00",
+                help="支持格式: 0800, 08:00, 800, 8:00",
+                key="injection_time_input"
+            )
+        with col_clear:
+            st.write("")  # Add spacing to align with input
+            if st.button("清除", key="clear_injection_time", help="清除时间"):
+                st.session_state.injection_time_state = ""
+                st.rerun()
         
         # Parse the actual time input from user
         if injection_time_input:
