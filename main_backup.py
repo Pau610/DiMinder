@@ -382,37 +382,15 @@ if st.session_state.input_type == 'glucose':
             key="glucose_date"
         )
     with col2:
-        # Time input with text format and integrated clear
-        time_input_col, clear_col = st.columns([0.8, 0.2])
+        hk_now = datetime.now(HK_TZ)
+        default_time = hk_now.time()
         
-        with time_input_col:
-            # Initialize time string
-            if 'glucose_time_str' not in st.session_state:
-                st.session_state.glucose_time_str = datetime.now(HK_TZ).strftime("%H:%M")
-            
-            time_str = st.text_input(
-                "记录时间 (GMT+8)",
-                value=st.session_state.glucose_time_str,
-                key="glucose_time_text",
-                placeholder="HH:MM (例如: 14:30)",
-                help="输入时间格式 HH:MM"
-            )
-            
-            # Parse time string to time object
-            try:
-                record_time = datetime.strptime(time_str, "%H:%M").time()
-                st.session_state.glucose_time_str = time_str
-            except:
-                st.error("时间格式错误，请使用 HH:MM 格式")
-                record_time = datetime.now(HK_TZ).time()
-        
-        with clear_col:
-            st.write("")  # Alignment spacing
-            if st.button("清除", key="clear_glucose", help="重置为当前时间"):
-                current_time = datetime.now(HK_TZ).strftime("%H:%M")
-                st.session_state.glucose_time_str = current_time
-                st.session_state.glucose_time_text = current_time
-                st.rerun()
+        record_time = st.time_input(
+            "记录时间 (GMT+8)",
+            value=default_time,
+            key="glucose_time",
+            help="选择血糖记录的时间"
+        )
 
     glucose_mmol = st.number_input("血糖水平 (mmol/L)", min_value=2.0, max_value=22.0, value=None, step=0.1, key="glucose_level", placeholder="请输入血糖值")
 
@@ -457,37 +435,15 @@ elif st.session_state.input_type == 'meal':
             key="meal_date"
         )
     with col2:
-        # Time input with text format and integrated clear
-        time_input_col, clear_col = st.columns([0.8, 0.2])
+        hk_now = datetime.now(HK_TZ)
+        default_meal_time = hk_now.time()
         
-        with time_input_col:
-            # Initialize time string
-            if 'meal_time_str' not in st.session_state:
-                st.session_state.meal_time_str = datetime.now(HK_TZ).strftime("%H:%M")
-            
-            time_str = st.text_input(
-                "用餐时间 (GMT+8)",
-                value=st.session_state.meal_time_str,
-                key="meal_time_text",
-                placeholder="HH:MM (例如: 12:30)",
-                help="输入时间格式 HH:MM"
-            )
-            
-            # Parse time string to time object
-            try:
-                meal_time = datetime.strptime(time_str, "%H:%M").time()
-                st.session_state.meal_time_str = time_str
-            except:
-                st.error("时间格式错误，请使用 HH:MM 格式")
-                meal_time = datetime.now(HK_TZ).time()
-        
-        with clear_col:
-            st.write("")  # Alignment spacing
-            if st.button("清除", key="clear_meal", help="重置为当前时间"):
-                current_time = datetime.now(HK_TZ).strftime("%H:%M")
-                st.session_state.meal_time_str = current_time
-                st.session_state.meal_time_text = current_time
-                st.rerun()
+        meal_time = st.time_input(
+            "用餐时间 (GMT+8)",
+            value=default_meal_time,
+            key="meal_time",
+            help="选择用餐时间"
+        )
 
     # Initialize food list
     if 'meal_foods' not in st.session_state:
@@ -573,37 +529,15 @@ elif st.session_state.input_type == 'insulin':
             key="injection_date"
         )
     with col2:
-        # Time input with text format and integrated clear
-        time_input_col, clear_col = st.columns([0.8, 0.2])
+        hk_now = datetime.now(HK_TZ)
+        default_injection_time = hk_now.time()
         
-        with time_input_col:
-            # Initialize time string
-            if 'injection_time_str' not in st.session_state:
-                st.session_state.injection_time_str = datetime.now(HK_TZ).strftime("%H:%M")
-            
-            time_str = st.text_input(
-                "注射时间 (GMT+8)",
-                value=st.session_state.injection_time_str,
-                key="injection_time_text",
-                placeholder="HH:MM (例如: 18:00)",
-                help="输入时间格式 HH:MM"
-            )
-            
-            # Parse time string to time object
-            try:
-                injection_time = datetime.strptime(time_str, "%H:%M").time()
-                st.session_state.injection_time_str = time_str
-            except:
-                st.error("时间格式错误，请使用 HH:MM 格式")
-                injection_time = datetime.now(HK_TZ).time()
-        
-        with clear_col:
-            st.write("")  # Alignment spacing
-            if st.button("清除", key="clear_injection", help="重置为当前时间"):
-                current_time = datetime.now(HK_TZ).strftime("%H:%M")
-                st.session_state.injection_time_str = current_time
-                st.session_state.injection_time_text = current_time
-                st.rerun()
+        injection_time = st.time_input(
+            "注射时间 (GMT+8)",
+            value=default_injection_time,
+            key="injection_time",
+            help="选择胰岛素注射时间"
+        )
 
     insulin_dose = st.number_input("胰岛素剂量 (单位)", min_value=0.0, max_value=100.0, value=None, step=0.5, key="insulin_dose", placeholder="请输入剂量")
     
