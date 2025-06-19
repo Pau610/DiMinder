@@ -382,22 +382,70 @@ if st.session_state.input_type == 'glucose':
             key="glucose_date"
         )
     with col2:
-        col_time, col_clear = st.columns([0.8, 0.2])
-        with col_time:
-            hk_now = datetime.now(HK_TZ)
-            default_time = hk_now.time()
+        # Initialize time state
+        if 'glucose_time_value' not in st.session_state:
+            st.session_state.glucose_time_value = datetime.now(HK_TZ).strftime("%H:%M")
+        
+        # Custom time input with integrated clear button
+        components.html(f"""
+        <div style="margin-bottom: 10px;">
+            <label style="font-size: 14px; font-weight: 600; margin-bottom: 4px; display: block;">记录时间 (GMT+8)</label>
+            <div style="position: relative; display: flex; align-items: center;">
+                <input 
+                    type="time" 
+                    id="glucose_time_input" 
+                    value="{st.session_state.glucose_time_value}"
+                    style="
+                        width: 100%; 
+                        padding: 8px 35px 8px 12px; 
+                        border: 1px solid #d1d5db; 
+                        border-radius: 6px; 
+                        font-size: 14px;
+                        background-color: white;
+                    "
+                    onchange="updateGlucoseTime(this.value)"
+                />
+                <button 
+                    onclick="clearGlucoseTime()" 
+                    style="
+                        position: absolute; 
+                        right: 8px; 
+                        background: none; 
+                        border: none; 
+                        color: #6b7280; 
+                        cursor: pointer; 
+                        font-size: 16px;
+                        padding: 4px;
+                        border-radius: 3px;
+                    "
+                    onmouseover="this.style.backgroundColor='#f3f4f6'"
+                    onmouseout="this.style.backgroundColor='transparent'"
+                    title="清除时间"
+                >×</button>
+            </div>
+        </div>
+        <script>
+            function updateGlucoseTime(value) {{
+                window.glucoseTimeValue = value;
+            }}
             
-            record_time = st.time_input(
-                "记录时间 (GMT+8)",
-                value=default_time,
-                key="glucose_time",
-                help="选择血糖记录的时间"
-            )
-        with col_clear:
-            st.write("")  # Empty line for alignment
-            if st.button("清除", key="clear_glucose_time", help="重置为当前时间"):
-                st.session_state.glucose_time = datetime.now(HK_TZ).time()
-                st.rerun()
+            function clearGlucoseTime() {{
+                const now = new Date();
+                const timeString = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+                document.getElementById('glucose_time_input').value = timeString;
+                window.glucoseTimeValue = timeString;
+            }}
+            
+            // Initialize the stored value
+            window.glucoseTimeValue = '{st.session_state.glucose_time_value}';
+        </script>
+        """, height=80)
+        
+        # Parse the time for use in record creation
+        try:
+            record_time = datetime.strptime(st.session_state.glucose_time_value, "%H:%M").time()
+        except:
+            record_time = datetime.now(HK_TZ).time()
 
     glucose_mmol = st.number_input("血糖水平 (mmol/L)", min_value=2.0, max_value=22.0, value=None, step=0.1, key="glucose_level", placeholder="请输入血糖值")
 
@@ -442,22 +490,70 @@ elif st.session_state.input_type == 'meal':
             key="meal_date"
         )
     with col2:
-        col_time, col_clear = st.columns([0.8, 0.2])
-        with col_time:
-            hk_now = datetime.now(HK_TZ)
-            default_meal_time = hk_now.time()
+        # Initialize time state
+        if 'meal_time_value' not in st.session_state:
+            st.session_state.meal_time_value = datetime.now(HK_TZ).strftime("%H:%M")
+        
+        # Custom time input with integrated clear button
+        components.html(f"""
+        <div style="margin-bottom: 10px;">
+            <label style="font-size: 14px; font-weight: 600; margin-bottom: 4px; display: block;">用餐时间 (GMT+8)</label>
+            <div style="position: relative; display: flex; align-items: center;">
+                <input 
+                    type="time" 
+                    id="meal_time_input" 
+                    value="{st.session_state.meal_time_value}"
+                    style="
+                        width: 100%; 
+                        padding: 8px 35px 8px 12px; 
+                        border: 1px solid #d1d5db; 
+                        border-radius: 6px; 
+                        font-size: 14px;
+                        background-color: white;
+                    "
+                    onchange="updateMealTime(this.value)"
+                />
+                <button 
+                    onclick="clearMealTime()" 
+                    style="
+                        position: absolute; 
+                        right: 8px; 
+                        background: none; 
+                        border: none; 
+                        color: #6b7280; 
+                        cursor: pointer; 
+                        font-size: 16px;
+                        padding: 4px;
+                        border-radius: 3px;
+                    "
+                    onmouseover="this.style.backgroundColor='#f3f4f6'"
+                    onmouseout="this.style.backgroundColor='transparent'"
+                    title="清除时间"
+                >×</button>
+            </div>
+        </div>
+        <script>
+            function updateMealTime(value) {{
+                window.mealTimeValue = value;
+            }}
             
-            meal_time = st.time_input(
-                "用餐时间 (GMT+8)",
-                value=default_meal_time,
-                key="meal_time",
-                help="选择用餐时间"
-            )
-        with col_clear:
-            st.write("")  # Empty line for alignment
-            if st.button("清除", key="clear_meal_time", help="重置为当前时间"):
-                st.session_state.meal_time = datetime.now(HK_TZ).time()
-                st.rerun()
+            function clearMealTime() {{
+                const now = new Date();
+                const timeString = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+                document.getElementById('meal_time_input').value = timeString;
+                window.mealTimeValue = timeString;
+            }}
+            
+            // Initialize the stored value
+            window.mealTimeValue = '{st.session_state.meal_time_value}';
+        </script>
+        """, height=80)
+        
+        # Parse the time for use in record creation
+        try:
+            meal_time = datetime.strptime(st.session_state.meal_time_value, "%H:%M").time()
+        except:
+            meal_time = datetime.now(HK_TZ).time()
 
     # Initialize food list
     if 'meal_foods' not in st.session_state:
@@ -543,22 +639,70 @@ elif st.session_state.input_type == 'insulin':
             key="injection_date"
         )
     with col2:
-        col_time, col_clear = st.columns([0.8, 0.2])
-        with col_time:
-            hk_now = datetime.now(HK_TZ)
-            default_injection_time = hk_now.time()
+        # Initialize time state
+        if 'injection_time_value' not in st.session_state:
+            st.session_state.injection_time_value = datetime.now(HK_TZ).strftime("%H:%M")
+        
+        # Custom time input with integrated clear button
+        components.html(f"""
+        <div style="margin-bottom: 10px;">
+            <label style="font-size: 14px; font-weight: 600; margin-bottom: 4px; display: block;">注射时间 (GMT+8)</label>
+            <div style="position: relative; display: flex; align-items: center;">
+                <input 
+                    type="time" 
+                    id="injection_time_input" 
+                    value="{st.session_state.injection_time_value}"
+                    style="
+                        width: 100%; 
+                        padding: 8px 35px 8px 12px; 
+                        border: 1px solid #d1d5db; 
+                        border-radius: 6px; 
+                        font-size: 14px;
+                        background-color: white;
+                    "
+                    onchange="updateInjectionTime(this.value)"
+                />
+                <button 
+                    onclick="clearInjectionTime()" 
+                    style="
+                        position: absolute; 
+                        right: 8px; 
+                        background: none; 
+                        border: none; 
+                        color: #6b7280; 
+                        cursor: pointer; 
+                        font-size: 16px;
+                        padding: 4px;
+                        border-radius: 3px;
+                    "
+                    onmouseover="this.style.backgroundColor='#f3f4f6'"
+                    onmouseout="this.style.backgroundColor='transparent'"
+                    title="清除时间"
+                >×</button>
+            </div>
+        </div>
+        <script>
+            function updateInjectionTime(value) {{
+                window.injectionTimeValue = value;
+            }}
             
-            injection_time = st.time_input(
-                "注射时间 (GMT+8)",
-                value=default_injection_time,
-                key="injection_time",
-                help="选择胰岛素注射时间"
-            )
-        with col_clear:
-            st.write("")  # Empty line for alignment
-            if st.button("清除", key="clear_injection_time", help="重置为当前时间"):
-                st.session_state.injection_time = datetime.now(HK_TZ).time()
-                st.rerun()
+            function clearInjectionTime() {{
+                const now = new Date();
+                const timeString = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+                document.getElementById('injection_time_input').value = timeString;
+                window.injectionTimeValue = timeString;
+            }}
+            
+            // Initialize the stored value
+            window.injectionTimeValue = '{st.session_state.injection_time_value}';
+        </script>
+        """, height=80)
+        
+        # Parse the time for use in record creation
+        try:
+            injection_time = datetime.strptime(st.session_state.injection_time_value, "%H:%M").time()
+        except:
+            injection_time = datetime.now(HK_TZ).time()
 
     insulin_dose = st.number_input("胰岛素剂量 (单位)", min_value=0.0, max_value=100.0, value=None, step=0.5, key="insulin_dose", placeholder="请输入剂量")
     
